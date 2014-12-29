@@ -64,45 +64,33 @@ and can be represented by an $M$-dimensional vector $\mathbf{y}_{i}$:
   \end{bmatrix},
 \eeq
 
-Therefore, all observations can be compactly represented by $N\times M$ matrix $\mathbf{y}$,
-such that each row $i$ is the observed star $\mathbf{y}_{i}$. The central pixel of the
-postage stamp is chosen such that the estimated centroid of the star $(x_i , y_i)$ is 
-in the central pixel. Let us denote the vector connecting the the center of the postage-stamp
-of star $i$ to its centroid by $(\delta x_{i}, \delta y_{i})$, and the flux of star by $f_{i}$.
-An uncertainty $\sigma_{ij}$ is associated with $j$-th pixel of the $i$-th star. 
-If the only contribution to per-pixel uncertainty is uncorrelated Gaussian noise,
-we will have $\sigma_{ij} = \sigma_{i}\delta_{ij}$.
-However, one can use a more general form of uncertainty to account for the
-effect of outlier pixels such as those hit by Cosmic rays, or overlapping stars.
+Therefore, all observations can be compactly represented by $N\times M$ matrix $\mathbf{y}$, such that each row $i$ is the observed
+star $\mathbf{y}_{i}$. The central pixel of the postage stamp is chosen such that the estimated centroid of the star $(x_i , y_i)$ is 
+in the central pixel. Let us denote the vector connecting the the center of the postage-stamp of star $i$ to its centroid by $(\delta x_{i}
+ , \delta y_{i})$, and the flux of star by $f_{i}$. An uncertainty $\sigma_{ij}$ is associated with $j$-th pixel of the $i$-th star. 
+If the only contribution to per-pixel uncertainty is uncorrelated Gaussian noise, we will have $\sigma_{ij} = \sigma_{i}\delta_{ij}$.
+ However, one can use a more
+general form of uncertainty to account for the effect of outlier pixels such as those hit by Cosmic rays, or overlapping stars.
    
-A common procedure in the PSF estimation involves the follwoing steps: $(i)$
-estimattion of the mean-PSF along each pixel $j\in\{1,...,M\}$
-by iteritavely rejecting the bad pixels, $(ii)$ replacing the rejected pixel of
-each star by the estimated mean-PSF along that pixel, $(iii)$ 
-normalizing the flux of each star, $(iv)$ applying of a sub-pixel shift
-to the stars such that the centroid of each star lies on center 
-of the postage-stamp of that star, $(v)$ subtracting the mean from each column
-of $\mathbf{Y}$, and applying PCA to $\mathbf{Y}$.
+A common procedure in the PSF estimation involves the follwoing steps: $(i)$ estimattion of the mean-PSF along each pixel $j\in\{1,...,M\}$
+by iteritavely rejecting the bad pixels, $(ii)$ replacing the rejected pixel of each star by the estimated mean-PSF along that pixel, $(iii)$ 
+normalizing the flux of each star, $(iv)$ applying of a sub-pixel shift to the stars such that the centroid of each star lies on center 
+of the postage-stamp of that star, $(v)$ subtracting the mean from each column of $\mathbf{Y}$, and applying PCA to $\mathbf{Y}$.
 
-We want to model the per-pixel intensity of stars $y_{ij}$ with a linear
-combination of $Q$ components $a_{iq}$ where $q=\{1,...,Q\}$, and $Q\ll M$.
+We want to model the per-pixel intensity of stars $y_{ij}$ with a linear combination of $Q$ components $a_{iq}$ where $q=\{1,...,Q\}$, and $Q\ll M$.
+
 \beq
 y_{ij} = \sum_{q=1}^{Q} f_{i}K_{i}\odot\big(a_{iq}w_{qj}\big) + \sigma_{ij},
 \eeq
-where $f_{i}$ is the flux of star $i$, $K_{i} = K_{i}(\delta x_{i} , \delata y_{i})$
-is a linear operator that shifts the center of the linear combination
-$\sum_{q=1}^{Q}a_{iq}w_{qj}$ to the centroid of star $i$, $w_{qj}$ is the 
-$j$-th component of the $q$-th basis function, and $a_{iq}$ is projection
-of star $i$ onto the $q$-th basis function. The shift
-operation is done by interpolation, such as bilinear interpolation,
-or cubic spline interpolation. 
+where $f_{i}$ is the flux of star $i$, $K_{i} = K_{i}(\delta x_{i} , \delata y_{i})$ is a linear operator that shifts the 
+center of the linear combination $\sum_{q=1}^{Q}a_{iq}w_{qj}$ to the centroid of star $i$, $w_{qj}$ is the 
+$j$-th component of the $q$-th basis function, and $a_{iq}$ is projection of star $i$ onto the $q$-th basis function. The shift
+operation is done by interpolation, such as bilinear interpolation, or cubic spline interpolation. 
 
-Let us consider the case of bilinear interpolation. The model for each star
-$i$ is $M$ dimensional vector $\mathbf{z}_{i}$ shifted by the operator $K_{i}$,
-and multiplied by flux value $f_{i}$. One can rewrite the vector $\mathbf{z}_{i}$
-as a $p\times p$ postage-stamp, where $p^{2}=M$.
-Applying a bilinear shift operator $K(\delta x_{i} , \delta y_{j})$
-results in another postage-stamp whose elements are given by
+Let us consider the case of 
+bilinear interpolation. The model for each star $i$ is $M$ dimensional vector $\mathbf{z}_{i}$ shifted by the operator $K_{i}$,
+and multiplied by flux value $f_{i}$. One can rewrite the vector $\mathbf{z}_{i}$ as a $p\times p$ postage-stamp, where $p^{2}=M$.
+Applying a bilinear shift operator $K(\delta x_{i} , \delta y_{j})$ results in another postage-stamp whose elements are given by
 \begin{eqnarray}
 \big(K_{i}\odot z_{i}\big)_{rs} &=& \delta x_{i} \delta y_{i} \, z_{i,r,s} \nonumber \\
                                 &+& (1 - \delta x_{i}) \delta y_{i} \, z_{i,r+1,s} \nonumber \\ 
@@ -111,14 +99,36 @@ results in another postage-stamp whose elements are given by
 \end{eqnarray}
 where appropriate boundary conditions need to be used. 
 
+In order to estimate the basis functions $\{w\}$, the amplitudes $\{a\}$,
+and the flux values $\{f\}$, we need to
+minimize the chi-squared function
+\begin{eqnarray}
+\chi^{2} &=& - \log \, p(\mathbf{Y}|\{w,a,f\}) \\
+         &=& \text{const} + \sum_{i,j=1}^{N,M} \frac{\Big[y_{ij} - 
+             \sum_{q=1}^{Q} f_{i}K_{i}\odot\big(a_{iq}w_{qj}\big)\Big]^{2}}{\sigma_{ij}^{2}},
+\end{eqnarray}
+where $p(\mathbf{Y}|\{w,a,f\})$ is the likelihood function.
 
+L1 regularization for basis functions because of sparsity
+L2 reg for fluxes because of non-negativity
+L2 for amplitudes?
 
 \section{Optimization}\label{sec:opt}
 
+iteratively (1) using stochastic gradient descent to update basis, (2) use analytic form (bc of L2)
+to update fluxes, (3) and sgd (or analytic depending on the reg) to update amplitudes.....
 
+discuss Lasso objetive function and stochastic gradient, and bayesian interpretation of it (laplacian prior)...
+
+Cost function and cross validation error....
 
 \section{Application to Deep Lens Survey}\label{sec:data}
+
+
 \section{Systematic tests}\label{sec:sys}
+
+ellipticity and fwhm residuals in the validation set ....
+
 \section{Discussion}\label{sec:discussion} 
 
 
