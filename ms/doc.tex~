@@ -109,7 +109,6 @@ minimize the chi-squared function
 where $p(\mathbf{Y}|\{w,a,f\})$ is the likelihood function.
 
 
-
 \section{Optimization}\label{sec:opt}
 
 
