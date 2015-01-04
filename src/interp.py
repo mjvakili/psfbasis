@@ -58,3 +58,25 @@ def interpolate(x, a, b, c):
     '''
     
     return _interpolate(x, a, b, c)
+
+
+def _interpolate_2d(x, y, a1, b1, a2, b2, c)
+
+  n1 = c.shape[0] - 3
+  n2 = c.shape[1] - 3
+  h1 = (b1 - a1)/n1
+  h2 = (b2 - a2)/n2
+  l1 = np.int((x - a1)//h1) + 1
+  l2 = np.int((y - a2)//h2) + 1
+  m1 = np.int(np.min(l1 + 3, n1 + 3))
+  m2 = np.int(np.min(l2 + 3, n2 + 3))
+  
+  s = 0
+
+ for i1 in xrange(l1, m1 + 1):
+    u_x = u(x, i1, a1, h1)
+    for i2 in xrange(l2, m2 + 1):
+      u_y = u(y, i2, a2, h2)
+      s += c[i1 - 1, i2 - 1] * u_x * u_y
+
+  return s
