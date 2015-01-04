@@ -80,3 +80,25 @@ def _interpolate_2d(x, y, a1, b1, a2, b2, c)
       s += c[i1 - 1, i2 - 1] * u_x * u_y
 
   return s
+
+def interpolate_2d(x, y, a1, b1, a2, b2, c):
+    '''
+    Return interpolated function value at x
+    
+    Parameters
+    ----------
+    x, y : float
+        The values where the function will be approximated at
+    a1, b1 : double
+        Lower and upper bounds of the grid for x
+    a2, b2 : double
+        Lower and upper bounds of the grid for y
+    c : ndarray
+        Coefficients of spline
+    
+    Returns
+    -------
+    out : float
+        Approximated function value at (x, y)
+    '''
+    return _interpolate_2d(x, y, a1, b1, a2, b2, c)
