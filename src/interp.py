@@ -1,6 +1,5 @@
-
+""" Implementation of cubic spline interpolation """
 import numpy as np
-
 
 def PI(t):
   
