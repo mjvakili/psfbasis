@@ -34,7 +34,7 @@ def _interpolate(x, a, b, c):
     #print n
     l = np.int((x - a)/h) + 1
     #print l
-    m = np.min(l + 3, n + 3)
+    m = min(l + 3, n + 3)
     
     s = 0
     for k in xrange(l, m + 1):
@@ -72,10 +72,10 @@ def _interpolate_2d(x, y, a1, b1, a2, b2, c):
   n2 = c.shape[1] - 3
   h1 = (b1 - a1)/n1
   h2 = (b2 - a2)/n2
-  l1 = np.int((x - a1)//h1) + 1
-  l2 = np.int((y - a2)//h2) + 1
-  m1 = np.int(np.min(l1 + 3, n1 + 3))
-  m2 = np.int(np.min(l2 + 3, n2 + 3))
+  l1 = np.int((x - a1)/h1) + 1
+  l2 = np.int((y - a2)/h2) + 1
+  m1 = min(l1 + 3, n1 + 3)
+  m2 = min(l2 + 3, n2 + 3)
   
   s = 0
 
