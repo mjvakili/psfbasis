@@ -20,15 +20,22 @@ def u(x, k, a, h):
     return PI((x - a)/h - (k - 2))
   
 def _interpolate(x, a, b, c):
-    """ x : float,
-        a : float, lower bound
-        b: float, upper bound
-        c: array"""
+    """ x : where we want to estimate the function at,
+        a : lower bound of the input grid
+        b : upper bound of the input grid
+        c : array containing (n+3) cubic-spline coefficients
+            where n is the number of spacing between
+            the input grid points (meaning the number 
+            of input grid points is n+1)
+    """ 
     
     n = c.shape[0] - 3
     h = (b - a)/n
-    l = np.int((x - a)//h) + 1
-    m = np.int(np.min(l + 3, n + 3))
+    #print n
+    l = np.int((x - a)/h) + 1
+    #print l
+    m = np.min(l + 3, n + 3)
+    
     s = 0
     for k in xrange(l, m + 1):
         s += c[k - 1] * u(x, k, a, h)
@@ -59,7 +66,7 @@ def interpolate(x, a, b, c):
     return _interpolate(x, a, b, c)
 
 
-def _interpolate_2d(x, y, a1, b1, a2, b2, c)
+def _interpolate_2d(x, y, a1, b1, a2, b2, c):
 
   n1 = c.shape[0] - 3
   n2 = c.shape[1] - 3
@@ -72,7 +79,7 @@ def _interpolate_2d(x, y, a1, b1, a2, b2, c)
   
   s = 0
 
- for i1 in xrange(l1, m1 + 1):
+  for i1 in xrange(l1, m1 + 1):
     u_x = u(x, i1, a1, h1)
     for i2 in xrange(l2, m2 + 1):
       u_y = u(y, i2, a2, h2)
@@ -101,3 +108,4 @@ def interpolate_2d(x, y, a1, b1, a2, b2, c):
         Approximated function value at (x, y)
     '''
     return _interpolate_2d(x, y, a1, b1, a2, b2, c)
+
