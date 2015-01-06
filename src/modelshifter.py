@@ -1,4 +1,4 @@
-"""Shifts the model to the center of stars"""
+"""Shifts the model to the center of stars using cubic-spline interpolator"""
 
 
 from __future__ import division
