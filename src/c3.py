@@ -30,8 +30,8 @@ def cov(f):
       C[i,j] = np.exp(-1.*r2/(4.*f**2.))
   return C
 
-C = cov(1.2)
-#C = np.identity(9)
+#C = cov(1.2)
+C = np.identity(9)
 ATA = np.dot(AT, np.dot(np.linalg.inv(C) , AT.T))
 factor = cho_factor(ATA, overwrite_a=True)
 #ATA = np.dot(AT, AT.T)
