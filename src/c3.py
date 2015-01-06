@@ -84,7 +84,7 @@ def MAD(a, axis=None):
     return np.median(np.abs(a - a_median), axis=axis)/0.6745
 
 
-def find_centroid(data , f = 1.5 , sigma):
+def find_centroid(data):
 
   sigma = MAD(data)
   size = data.shape[0]
