@@ -66,7 +66,7 @@ def cal_coefs(a, b, y, c=None, alpha=0, beta=0):
 interpolate = _spline.interpolate
 interpolate_2d = _spline.interpolate_2d
 cen = c3.find_centroid
-def centerer(y):
+def shifter(y):
   
   """
   input = image
