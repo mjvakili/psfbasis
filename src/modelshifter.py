@@ -93,17 +93,15 @@ def centerer(y):
   
   
   ox , oz = cen(y)
-  
-  gridhat_x = grid_x - ox
+  #shifting the center of the grid to the center of the star
+  gridhat_x = grid_x - ox   
   gridhat_z = grid_z - oz
-  #print grid_x
-  #print gridhat_x
-
-  yhat = zeros((n1+1 , n2+1))
   
+  #computing the shifted model using cubic-spline-interpolation
+  y_hat = zeros((n1+1 , n2+1))
   for i, x in enumerate(gridhat_x):
     for j, z in enumerate(gridhat_z):
-      yhat[i, j] = interpolate_2d(x, z, a1, b1, a2, b2, c)
+      y_hat[i, j] = interpolate_2d(x, z, a1, b1, a2, b2, c)
 
-  return yhat
+  return y_hat
 
