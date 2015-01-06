@@ -69,8 +69,24 @@ def makeGaussian(size , FWHM =3 , e = 0 , center = None):
     return factor*np.exp((-1.*r**2.)/(2*FWHM**2.))
 
 
+def MAD(a, axis=None):
+    """Compute the median absolute deviation"""
+    a = np.array(a, copy=False)
+    a_median = np.median(a, axis=axis)
+
+    #re-broadcast the output median array to subtract it
+    if axis is not None:
+        shape = list(a_median.shape)
+        shape.append(1)
+        a_median = a_median.reshape(shape)
+
+    #calculated the median average deviation
+    return np.median(np.abs(a - a_median), axis=axis)/0.6745
+
+
 def find_centroid(data , f = 1.5 , sigma):
 
+  sigma = MAD(data)
   size = data.shape[0]
   zero = size/2 + .5
   kernel = makeGaussian(7, 1.5 , 0 , np.array([3.5,3.5]))
