@@ -44,7 +44,6 @@ def cal_coefs(a, b, y, c=None, alpha=0, beta=0):
     c[1] = 1/6 * (y[0] - (alpha * h**2)/6)
     c[n + 1] = 1/6 * (y[n] - (beta * h**2)/6)
 
-    # ab matrix here is just compressed banded matrix
     ab = ones((3, n - 1))
     ab[0, 0] = 0
     ab[1, :] = 4
@@ -62,7 +61,6 @@ def cal_coefs(a, b, y, c=None, alpha=0, beta=0):
     if ifreturn:
         return(c)
 
-# aliases
 interpolate = _spline.interpolate
 interpolate_2d = _spline.interpolate_2d
 cen = c3.find_centroid
