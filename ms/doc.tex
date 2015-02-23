@@ -114,6 +114,7 @@ Given the form of cubic spline shift operation, we can write the linear model
 \begin{eqnarray}
 y_{ij} = f_{i} \sum_{k=1}^{Q}\sum_{l=1}^{D} a_{ik}g_{kl}P^{(i)}_{lj} +
          f_{i}\sum_{l=1}^{D} X_{l}P^{(i)}_{lj} + \text{noise}.
+\label{model}
 \end{eqnarray}
 
 We need to estimate the $N\times Q$ basis matrix $G$, the $Q \times D$ amplitude 
@@ -132,6 +133,64 @@ where $p(\mathbf{Y}|A,G,X,\{f\})$ is the likelihood function.
 
 \section{Optimization}\label{sec:opt}
 
+Prior to optimizing the $\chi^{2}$ (\ref{chi}), we find the centroids of stars
+using some centroiding algorithm CITESDSS. Using the centroid estimates,
+ we apply the \emph{shifting} and \emph{adding} procedure described in section \ref{sec:model}
+to initialize the basis matrix $G$, and the amplitude matrix $A$. Then we initialize 
+the flux values by summing over the birghtness of pixels in postage-stamp of each star.   
+ 
+\item {\bf Updating the mean-PSF model $X$}\quad
+
+Having found initial estimates of the flux values $\{f_{i}\}$, 
+we can fit a mean model to the data, in order to update the $D$-
+dimensional mean-PSF. That is, we take the second term in the 
+linear model (\ref{model}) and fit for $X_{l}$ in the follwing way:
+
+\begin{eqnarray}
+X &\leftarrow& \mathcal{P}^{-1}\mathcal{F}, \\
+\mathcal{P} &\equiv& \sum_{i=1}^{N} \frac{P^{(i)}^{T}P^{(i)}}{\sigma_{i}^{2}}, \\
+\mathcal{F} &\equiv& \sum_{i=1}^{N} \frac{P^{(i)}^{T}y_{i}}{f_{i}\sigma_{i}^{2}}.
+\end{eqnarray}
+
+\item {\bf Updating the amplitude matrix $A$}\quad
+
+After updating the mean-PSF $X$, we subtract the second term of the
+linear model (\ref{model}) from the left-hand-side. Now, we have
+\begin{eqnarray}
+\tilde{y}_{ij} &=& f_{i}\sum_{k=1}^{Q}a_{ik}\tilde{g}^{(i)}_{kj}, \label{tildey} \\
+\tilde{y}_{ij} &\equiv& y_{ij} - f_{i}\sum_{l=1}^{D} X_{l}P^{(i)}_{lj}, \\
+\tilde{g}^{(i)}_{kj} &=& \sum_{l=1}^{D} g_{kl}P^{(i)}_{lj}.
+\end{eqnarray}
+
+Now, given equation (\ref{tildey}), we can update the amplitude matrix $A$ as follows:
+\begin{eqnarray}
+A_{i} &\leftarrow& \Big[\frac{\tilde{G}^{(i)}\tilde{G}^{(i)}^{T}}{\sigma_{i}^{2}}\Big]^{-1}
+                   \Big[\frac{\tilde{G}^{(i)}\tilde{y}_{i}}{f_{i}}\Big], \\
+\tilde{G}^{(i)} &\equiv& GP^{(i)},
+\end{eqnarray}
+where $A_{i}$ is the $i$-th row of $A$.
+
+\item {\bf Updating the basis matrix $G$}\quad
+
+Given the updated amplitude matrix, for each patch $i$, we can update the 
+matrix $\tilde{G}^{(i)} = GP^{(i)}$ in the following way:
+\begin{eqnarray}
+\tilde{G}^{(i)} &\leftarrow& [\mathcal{A}^{(i)}]^{-1}\mathcal{Y}, \\
+\mathcal{A}^{(i)}_{jl} &\equiv& \frac{A_{ij}A_{il}}{\sigma_{i}^{2}}, \\
+\mathcal{Y}^{(i)}_{jl} &\equiv& \frac{A_{ij}y_{il}}{\sigma_{i}^{2}}.
+\end{eqnarray}
+
+Now, we use the new $\tilde{G}^{(i)}$ matrices to update the basis matrix $G$:
+\beq
+G &\leftarrow& \sum_{i=1}^{N} \frac{[P^{(i)}]^{-1}\tilde{G}^{(i)}}{N}.
+\eeq
+
+\item {\bf Updating the flux values $\{f_{i}\}$}\quad
+
+Given the updated mean-PSF $X$, amplitude matrix $A$, 
+and basis matrix $G$, we update each flux value $f_{i}$ 
+by dividing the data vector $y_{i}$ by the PSF-model
+shifted by $(\delta x_{i} , \delta y_{i})$.  
 
 \section{Application to Deep Lens Survey}\label{sec:data}
 \section{Systematic tests}\label{sec:sys}
