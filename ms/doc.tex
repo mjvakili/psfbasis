@@ -1,134 +1,140 @@
-\documentclass[12pt, preprint]{aastex}
-\usepackage{graphicx}	% For figures
+\documentclass[12pt,preprint]{aastex}
+
+% has to be before amssymb it seems
+\usepackage{color,hyperref}
+\definecolor{linkcolor}{rgb}{0,0,0.5}
+\hypersetup{colorlinks=true,linkcolor=linkcolor,citecolor=linkcolor,
+            filecolor=linkcolor,urlcolor=linkcolor}
+\usepackage{url}
+\usepackage{algorithmic,algorithm}
+\usepackage{amssymb,amsmath}
 \usepackage{natbib}	% For citep and citep
 \usepackage{amsmath}	% for \iint
 \usepackage{bbm}
 \usepackage[breaklinks]{hyperref}	% for blackboard bold numbers
-\usepackage{hyperref}
-\hypersetup{colorlinks}
-\usepackage{color}
-\definecolor{darkred}{rgb}{0.5,0,0}
-\definecolor{darkgreen}{rgb}{0,0.5,0}
-\definecolor{darkblue}{rgb}{0,0,0.5}
-\hypersetup{ colorlinks,
-linkcolor=darkblue,
-filecolor=darkgreen,
-urlcolor=darkred,
-citecolor=darkblue }
+\usepackage{morefloats}
+\usepackage{bm}
 \newcommand{\beq}{\begin{equation}}
 \newcommand{\eeq}{\end{equation}}
 
-
 \begin{document}
 
-\author{
-  Mohammadjavad~Vakili\altaffilmark{1},
-  David~W.~Hogg\altaffilmark{1,2,3}
-\altaffiltext{1}{Center for Cosmology and Particle Physics, New York University}
-\altaffiltext{2}{Center for Data Science, New York University}
-\altaffiltext{3}{Max-Planck-Institut f\"ur Astronomie}
-}
-
-\title{Probabilistic forward modeling of the PSF}
-
-\begin{abstract}
-
-\end{abstract}
-
+\title{Forward modeling of the PSF}
 \section{Introduction}
-
 
 This paper is structured as follows. In section \ref{sec:model},
 we discuss our proposed data-driven model for the PSF estimation.
-In section \ref{sec:opt}, we discuss the optimization method we use in order to 
-infer the model parameters, and also the training and validation criteria for 
-truncating the optimization. In section \ref{sec:data}, we demonstrate application of 
-our model in esimating the PSF for the data from \emph{Deep Lens Survey}. 
-In section \ref{sec:sys} we perform systematic tests, relavant to weak lensing cosmology, 
+In section \ref{sec:opt}, we discuss the optimization method
+ we use in order to infer the model parameters, and also
+ the training and validation criteria for 
+truncating the optimization. In section \ref{sec:data},
+ we demonstrate application of our model in esimating
+ the PSF for the data from \emph{Deep Lens Survey}. 
+In section \ref{sec:sys} we perform systematic tests,
+ relavant to weak lensing cosmology, 
 to asses the quality of the results obtained from our model. 
 Finally, we discuss and conclude in \ref{sec:discussion}.               
 
 \section{Model}\label{sec:model}
 
-We want to use $N$ observed stars for modeling the PSF. Each star postage-stamp has $M$ pixels, 
-and can be represented by an $M$-dimensional vector $\mathbf{y}_{i}$:
+We want to use $N$ observed stars for modeling the PSF. 
+Each star postage-stamp has $D$ pixels, 
+and can be represented by an $D$-dimensional vector 
+$\mathbf{y}_{i}$:
 
 \beq
-\mathbf{y}_{i}=
+\mathbf{y}=
   \begin{bmatrix}
-    y_{i1} \\
-    . \\
-    . \\
-    . \\
-    y_{iM} \\
+    y_{11}, ... , y_{1D} \\
+    ., ... , . \\
+    ., ... , . \\
+    y_{N1}, ... , y_{ND} \\
   \end{bmatrix},
 \eeq
 
-Therefore, all observations can be compactly represented by $N\times M$ matrix
-$\mathbf{y}$, such that each row $i$ is the observed star $\mathbf{y}_{i}$.
-The central pixel of the postage stamp is chosen such that the estimated centroid
-of the star $(x_i , y_i)$ is in the central pixel. Let us denote the vector
-connecting the the center of the postage-stamp of star $i$ to its centroid by $(\delta x_{i},
-\delta y_{i})$, and the flux of star by $f_{i}$. An uncertainty $\sigma_{ij}$ is
-associated with $j$-th pixel of the $i$-th star. If the only contribution to
-per-pixel uncertainty is uncorrelated Gaussian noise, we will have $\sigma_{ij} = \sigma_{i}\delta_{ij}$.
-However, one can use a more general form of uncertainty to account for the effect
-of outlier pixels such as those hit by Cosmic rays, or overlapping stars.
-   
+Therefore, all observations can be compactly represented by 
+$N\times D$ matrix $\mathbf{y}$, such that each row $i$ 
+is the observed star $\mathbf{y}_{i}$. The central pixel of 
+the postage stamp is chosen such that the estimated centroid
+of the star $(x_i , y_i)$ is in the central pixel. 
+Let us denote the vector connecting the the center of the 
+postage-stamp of star $i$ to its centroid by $(\delta x_{i},
+\delta y_{i})$, and the flux of star by $f_{i}$. 
+  
 A common procedure in the PSF estimation involves the follwoing steps:
-$(i)$ estimattion of the mean-PSF along each pixel $j\in\{1,...,M\}$
-by iteritavely rejecting the bad pixels, $(ii)$ replacing the rejected
-pixel of each star by the estimated mean-PSF along that pixel, $(iii)$ 
-normalizing the flux of each star, $(iv)$ applying of a sub-pixel shift
+$(i)$ estimation of the mean-PSF along each pixel $j\in\{1,...,D\}$
+by iteritavely rejecting the bad pixels (eg. pixels hit by cosmic rays),
+ $(ii)$ replacing the rejected pixel of each star by the estimated mean-PSF 
+along that pixel, $(iii)$ normalizing the flux of each star,
+ $(iv)$ applying of a sub-pixel shift
 to the stars such that the centroid of each star lies on center 
 of the postage-stamp of that star, $(v)$ subtracting the mean from each
 column of $\mathbf{Y}$, and applying PCA to $\mathbf{Y}$.
 
 We want to model the per-pixel intensity of stars $y_{ij}$ with
-a linear combination of $Q$ components $a_{iq}$ where $q=\{1,...,Q\}$, and $Q\ll M$.
+a linear combination of $Q$ components $a_{iq}$ where $q=\{1,...,Q\}$, and $Q\ll D$.
 \beq
-y_{ij} = \sum_{q=1}^{Q} f_{i}K_{i}\odot\big(a_{iq}w_{qj}\big) + \sigma_{ij},
+y_{ij} = \sum_{q=1}^{Q} f_{i}K_{i}\big(a_{iq}g_{qj}\big) + \text{noise},
+\label{lin}
 \eeq
 where $f_{i}$ is the flux of star $i$, $K_{i} = K_{i}(\delta x_{i} , \delata y_{i})$
-is a linear operator that shifts the center of the linear combination
-$\sum_{q=1}^{Q}a_{iq}w_{qj}$ to the centroid of star $i$, $w_{qj}$ is the 
-$j$-th component of the $q$-th basis function, and $a_{iq}$ is projection
-of star $i$ onto the $q$-th basis function. The shift
-operation is done by interpolation, such as bilinear interpolation,
-or cubic spline interpolation. 
+is a linear operator that shifts the center of the linear 
+combination model $\sum_{q=1}^{Q}a_{iq}g_{qj}$ to the centroid 
+of star $i$, $g_{qj}$ is the $j$-th component of the $q$-th 
+basis function, and $a_{iq}$ is projection
+of star $i$ onto the $q$-th basis function. 
+Hereafter, we compactly represent the set
+of $\{a_{iq}\}$ by a $N\times Q$ amplitude matrix $A$, 
+and the set of $\{g_{qj}\}$
+by a $Q\times D$ basis matrix.
 
-Let us consider the case of bilinear interpolation. The model for each
-star $i$ is $M$ dimensional vector $\mathbf{z}_{i}$ shifted by the operator $K_{i}$,
-and multiplied by flux value $f_{i}$. One can rewrite the vector $\mathbf{z}_{i}$
-as a $p\times p$ postage-stamp, where $p^{2}=M$. Applying a bilinear shift
-operator $K(\delta x_{i} , \delta y_{j})$ results in another postage-stamp whose elements are given by
+ In the absence of subpixel shifts of the PSF model
+with respect to the data, different flux values, and per-pixel 
+uncertainties, one could rewrite the model (\ref{lin}) as a 
+simple matrix factorization $Y = AG$. In this case, after 
+subtracting the mean-PSF, one can apply a SVD decomposition 
+to the data $Y$, and constructs $G$ from the $K$ eigenvectors 
+of the covariance matrix that are associated with the highest 
+eigenvalues of the covariance matrix. Then, once can use a simple 
+least-square fit to determine the amplitude matrix $A$. 
+
+The shift operation on an image is a linear transformation. In order to
+apply a shift operation on PSF models, we use cubic spline interpolation.
+Let us denote the PSF model for the i-th star by a $D$ dimensional column 
+vector $m_{i}$. The PSF model $m_{i}$ is constructed such that it is centered
+on the center of its postage-stamp. The operation that shifts the model to the
+center of the data $(x_{i} , y_{i})$ using a cubic spline interpolation can
+be done by multiplying a $D\times D$ matrix $P_{i}$ with  the model $m_{i}$.
+The shift matrix $P_{i}$, whose entries are determined by sub-pixel shifts $(\delta x_{i}
+, \delta y_{i})$, is extremely sparse because it only couples nearby pixels of 
+the PSF model $m_{i}$.
+
+Given the form of cubic spline shift operation, we can write the linear model 
+(\ref{lin}) as follows
 \begin{eqnarray}
-\big(K_{i}\odot z_{i}\big)_{rs} &=& \delta x_{i} \delta y_{i} \, z_{i,r,s} \nonumber \\
-                                &+& (1 - \delta x_{i}) \delta y_{i} \, z_{i,r+1,s} \nonumber \\ 
-                                &+& \delta x_{i} (1-\delta y_{i}) \, z_{i,r,s+1} \nonumber \\ 
-                                &+& (1 - \delta x_{i})(1-\delta y_{i}) \, z_{i,r+1,s+1} \, ,
+y_{ij} = f_{i} \sum_{k=1}^{Q}\sum_{l=1}^{D} a_{ik}g_{kl}P^{(i)}_{lj} +
+         f_{i}\sum_{l=1}^{D} X_{l}P^{(i)}_{lj} + \text{noise}.
 \end{eqnarray}
-where appropriate boundary conditions need to be used. 
 
-In order to estimate the basis functions $\{w\}$, the amplitudes $\{a\}$,
-and the flux values $\{f\}$, we need to minimize the chi-squared function
+We need to estimate the $N\times Q$ basis matrix $G$, the $Q \times D$ amplitude 
+matrix $A$, the flux values $f_{i}$, and the $D$ dimensional mean-PSF model.
+This requires minimizing the $\chi^{2}$ function.
+
 \begin{eqnarray}
-\chi^{2} &=& - \log \, p(\mathbf{Y}|\{w,a,f\}) \\
-         &=& \text{const} + \sum_{i,j=1}^{N,M} \frac{\Big[y_{ij} - 
-             \sum_{q=1}^{Q} f_{i}K_{i}\odot\big(a_{iq}w_{qj}\big)\Big]^{2}}{\sigma_{ij}^{2}},
+\chi^{2} &=& - \log \, p(\mathbf{Y}|A,G,X,\{f\}) \\
+         &=& \text{const} + \sum_{i,j=1}^{N,D} \frac{\Big[y_{ij} - 
+             f_{i} \sum_{k=1}^{Q}\sum_{l=1}^{D} a_{ik}g_{kl}P^{(i)}_{lj} +
+             f_{i}\sum_{l=1}^{D} X_{l}P^{(i)}_{lj}\Big]^{2}}{\sigma_{ij}^{2}},
+\label{chi}
 \end{eqnarray}
-where $p(\mathbf{Y}|\{w,a,f\})$ is the likelihood function.
-
+where $p(\mathbf{Y}|A,G,X,\{f\})$ is the likelihood function.
 
 
 \section{Optimization}\label{sec:opt}
-
 
 
 \section{Application to Deep Lens Survey}\label{sec:data}
 \section{Systematic tests}\label{sec:sys}
 \section{Discussion}\label{sec:discussion} 
 
-
 \end{document}
-
