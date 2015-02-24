@@ -1,6 +1,4 @@
 \documentclass[12pt,preprint]{aastex}
-
-% has to be before amssymb it seems
 \usepackage{color,hyperref}
 \definecolor{linkcolor}{rgb}{0,0,0.5}
 \hypersetup{colorlinks=true,linkcolor=linkcolor,citecolor=linkcolor,
@@ -8,11 +6,10 @@
 \usepackage{url}
 \usepackage{algorithmic,algorithm}
 \usepackage{amssymb,amsmath}
-\usepackage{natbib}	% For citep and citep
-\usepackage{amsmath}	% for \iint
+\usepackage{natbib}	
+\usepackage{amsmath}	
 \usepackage{bbm}
-\usepackage[breaklinks]{hyperref}	% for blackboard bold numbers
-\usepackage{morefloats}
+\usepackage[breaklinks]{hyperref}	
 \usepackage{bm}
 \newcommand{\beq}{\begin{equation}}
 \newcommand{\eeq}{\end{equation}}
@@ -39,11 +36,13 @@ Finally, we discuss and conclude in \ref{sec:discussion}.
 
 We want to use $N$ observed stars for modeling the PSF. 
 Each star postage-stamp has $D$ pixels, 
-and can be represented by an $D$-dimensional vector 
-$\mathbf{y}_{i}$:
+and can be represented by a $D$-dimensional vector 
+$\mathbf{y}_{i}$. We represent all observed stars by a 
+$N\times D$ matrix $Y$, such that each row $i$ 
+is $\mathbf{y}_{i}$.
 
 \beq
-\mathbf{y}=
+Y=
   \begin{bmatrix}
     y_{11}, ... , y_{1D} \\
     ., ... , . \\
@@ -52,9 +51,7 @@ $\mathbf{y}_{i}$:
   \end{bmatrix},
 \eeq
 
-Therefore, all observations can be compactly represented by 
-$N\times D$ matrix $\mathbf{y}$, such that each row $i$ 
-is the observed star $\mathbf{y}_{i}$. The central pixel of 
+The central pixel of 
 the postage stamp is chosen such that the estimated centroid
 of the star $(x_i , y_i)$ is in the central pixel. 
 Let us denote the vector connecting the the center of the 
@@ -95,15 +92,15 @@ simple matrix factorization $Y = AG$. In this case, after
 subtracting the mean-PSF, one can apply a SVD decomposition 
 to the data $Y$, and constructs $G$ from the $K$ eigenvectors 
 of the covariance matrix that are associated with the highest 
-eigenvalues of the covariance matrix. Then, once can use a simple 
+eigenvalues of the covariance matrix. Then, onc can perform a simple 
 least-square fit to determine the amplitude matrix $A$. 
 
 The shift operation on an image is a linear transformation. In order to
-apply a shift operation on PSF models, we use cubic spline interpolation.
+apply a shift operation on PSF models, we make use of cubic spline interpolation.
 Let us denote the PSF model for the i-th star by a $D$ dimensional column 
 vector $m_{i}$. The PSF model $m_{i}$ is constructed such that it is centered
 on the center of its postage-stamp. The operation that shifts the model to the
-center of the data $(x_{i} , y_{i})$ using a cubic spline interpolation can
+center of the data $(x_{i} , y_{i})$ through a cubic spline interpolation can
 be done by multiplying a $D\times D$ matrix $P_{i}$ with  the model $m_{i}$.
 The shift matrix $P_{i}$, whose entries are determined by sub-pixel shifts $(\delta x_{i}
 , \delta y_{i})$, is extremely sparse because it only couples nearby pixels of 
@@ -134,17 +131,17 @@ where $p(\mathbf{Y}|A,G,X,\{f\})$ is the likelihood function.
 \section{Optimization}\label{sec:opt}
 
 Prior to optimizing the $\chi^{2}$ (\ref{chi}), we find the centroids of stars
-using some centroiding algorithm CITESDSS. Using the centroid estimates,
- we apply the \emph{shifting} and \emph{adding} procedure described in section \ref{sec:model}
+using some centroiding algorithm CITESDSS. Then we use the centroid estimates to 
+apply the \emph{shifting} and \emph{averaging} procedure described in section \ref{sec:model}
 to initialize the basis matrix $G$, and the amplitude matrix $A$. Then we initialize 
-the flux values by summing over the birghtness of pixels in postage-stamp of each star.   
+the flux values by summing over the birghtness of pixels in each patch.   
  
 \item {\bf Updating the mean-PSF model $X$}\quad
 
 Having found initial estimates of the flux values $\{f_{i}\}$, 
 we can fit a mean model to the data, in order to update the $D$-
 dimensional mean-PSF. That is, we take the second term in the 
-linear model (\ref{model}) and fit for $X_{l}$ in the follwing way:
+linear model (\ref{model}) and update $X_{l}$ in the follwing way:
 
 \begin{eqnarray}
 X &\leftarrow& \mathcal{P}^{-1}\mathcal{F}, \\
@@ -159,7 +156,7 @@ linear model (\ref{model}) from the left-hand-side. Now, we have
 \begin{eqnarray}
 \tilde{y}_{ij} &=& f_{i}\sum_{k=1}^{Q}a_{ik}\tilde{g}^{(i)}_{kj}, \label{tildey} \\
 \tilde{y}_{ij} &\equiv& y_{ij} - f_{i}\sum_{l=1}^{D} X_{l}P^{(i)}_{lj}, \\
-\tilde{g}^{(i)}_{kj} &=& \sum_{l=1}^{D} g_{kl}P^{(i)}_{lj}.
+\tilde{g}^{(i)}_{kj} &\equive& \sum_{l=1}^{D} g_{kl}P^{(i)}_{lj}.
 \end{eqnarray}
 
 Now, given equation (\ref{tildey}), we can update the amplitude matrix $A$ as follows:
