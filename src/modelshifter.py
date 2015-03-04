@@ -64,13 +64,15 @@ def cal_coefs(a, b, y, c=None, alpha=0, beta=0):
 interpolate = _spline.interpolate
 interpolate_2d = _spline.interpolate_2d
 cen = c3.find_centroid
-def shifter(y):
+def shifter(data):
   
   """
   input = image
   output = centered image using cubic-spline INTERPOLATION
   """
-
+  
+  NN = int(sqrt(data.shape[0]))
+  y = data.reshape((NN,NN))
   a1 , a2 = 0.5 , 0.5
   b1 , b2 = y.shape[0] - .5 , y.shape[1] - .5
   n1 , n2 = y.shape[0] - 1 , y.shape[1] - 1     #image.shape[0]([1]) = 
@@ -89,11 +91,12 @@ def shifter(y):
   c = zeros((n1+3 , n2+3))           #initializing the place holder for spline coefficients
   cal_coefs(a2 , b2 , c_tmp.T , c.T)
   
+  ox , oz = c3.find_centroid(y)
   
-  ox , oz = cen(y)
+  
   #shifting the center of the grid to the center of the star
-  gridhat_x = grid_x - ox   
-  gridhat_z = grid_z - oz
+  gridhat_x = grid_x + ox   
+  gridhat_z = grid_z + oz
   
   #computing the shifted model using cubic-spline-interpolation
   y_hat = zeros((n1+1 , n2+1))
@@ -101,5 +104,4 @@ def shifter(y):
     for j, z in enumerate(gridhat_z):
       y_hat[i, j] = interpolate_2d(x, z, a1, b1, a2, b2, c)
 
-  return y_hat
-
+  return y_hat.reshape((NN*NN))
