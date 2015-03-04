@@ -1,6 +1,6 @@
 import numpy as np
 import ms
-import shifter
+import modelshifter
 import shift
 import numpy as np
 import scipy.optimize as op
@@ -42,7 +42,7 @@ class stuff(object):
           #shifting and normalizing
         for i in range(self.N):
           self.F[i] = np.sum(self.data[i,:])
-          self.dm[i,:] = shifter.shifter(self.data[i,:])/self.F[i]
+          self.dm[i,:] = modelshifter.shifter(self.data[i,:])/self.F[i]
 
           #averaging to get the mean
         self.X = np.sum(self.dm, axis=0)/self.N
