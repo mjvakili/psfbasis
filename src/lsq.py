@@ -29,8 +29,9 @@ class stuff(object):
 
         #initialize A, G, X, F:
         self.initialize()
+        self.update_A()
         #update A, G, X, F:
-        #self.update()
+        self.update(max_iter, check_iter, min_iter, tol)
         
         
     def initialize(self):
@@ -51,8 +52,8 @@ class stuff(object):
         self.lambdas, evals = self.svd_pca(self.dmm)
         self.G = self.lambdas[:self.K, :]
         self.A  = self._e_step()
-        
-        self.update(tol, min_iter, max_iter, check_iter)
+        #update all the parameters
+
 
     def svd_pca(self, data):
         """
@@ -97,14 +98,14 @@ class stuff(object):
         #r = solve(np.dot(pi,pi.T)
 
 
-   
     def update_A(self):
-
+       
+       self.d = int(np.sqrt(self.D))
        for i in range(self.N):  
          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
          temp = temp.reshape((self.d-2)*(self.d-2))
          pi = shift.matrix(temp)   
-         igtilde = np.dot(G, pi)
+         igtilde = np.dot(self.G, pi)
          gg = np.dot(igtilde, igtilde.T)
          gy = np.dot(igtilde, self.dmm[i,:])
          self.A[i,:] = solve(gg, gy)
@@ -112,48 +113,73 @@ class stuff(object):
     
     def update_G(self):
        
+       self.d = int(np.sqrt(self.D))
        self.gg = np.zeros_like(self.G)
        for i in range(self.N):
          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
          temp = temp.reshape((self.d-2)*(self.d-2))
-         pi = shift.matrix(temp)   
-         aa = np.dot(self.A[i,:].T, self.A[i,:])
-         ay = np.dot(self.A[i,:].T, self.dmm[i,:])
-         self.gg += solve(pi, solve(aa, ay))/self.N
+         pi = shift.imatrix(temp)   
+         aa = np.outer(self.A[i,:].T, self.A[i,:])
+         ay = np.zeros((self.K,self.D))
+         for j in range(self.D):
+         
+          #print aa.shape
+          ay[:,j] = self.A[i,:].T*self.dmm[i,j]
+         self.gg += np.dot(solve(aa, ay),pi)/self.N
          
        self.G = self.gg
+       self.orthonormalize()
 
     def update_F(self):
 
+       self.d = int(np.sqrt(self.D))
        for i in range(self.N):
          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
          temp = temp.reshape((self.d-2)*(self.d-2))
          pi = shift.matrix(temp)
          imodel = np.dot(self.A[i], self.G) + self.X 
          ismodel = np.dot(imodel , pi)
-         self.F[i] = self.data[i]/ismodel
+         #print ismodel.shape
+         self.F[i] = np.max(self.data[i])/np.max(ismodel)
 
     def nll(self):
    
        nll = 0.
+       self.d = int(np.sqrt(self.D))
        for i in range(self.N):
          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
          temp = temp.reshape((self.d-2)*(self.d-2))
          pi = shift.matrix(temp)
          imodel = np.dot(self.A[i], self.G) + self.X 
          ismodel = self.F[i]*np.dot(imodel , pi)
-         nll += 0.5*np.sum((ismodel - data[i,:])**2.)
+         nll += 0.5*np.sum((ismodel - self.data[i,:])**2.)
        return nll
 
-    def update(self, maxiter, check_iter, min_iter, tol):
+    def orthonormalize(self):
+        """
+        Ortho_Normalize Gs
+        """
+        def get_normalization(v):
+            return np.sqrt(np.dot(v, v))
+
+        self.G[0] /= get_normalization(self.G[0])
+        for i in range(1, self.K):
+            for j in range(0, i):
+                v = np.dot(self.G[i], self.G[j])
+                self.G[i] -=  v * self.G[j]
+                    
+            self.G[i] /= get_normalization(self.G[i])
+
+
+    def update(self, max_iter, check_iter, min_iter, tol):
   
-        print 'Starting NLL =', self.nll()
+        #print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
             #self.update_X()
             self.update_A()
             self.update_G()
-            self.update_F()
+            #self.update_F()
             if np.mod(i, check_iter) == 0:
                 new_nll = self.nll() 
                 print 'NLL at step %d is:' % i, new_nll
@@ -164,3 +190,4 @@ class stuff(object):
             else:
                 nll = new_nll
         self.nll = new_nll 
+
