@@ -97,7 +97,8 @@ class stuff(object):
         #r = solve(np.dot(pi,pi.T)
 
 
-   def update_A(self):
+   
+    def update_A(self):
 
        for i in range(self.N):  
          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
@@ -109,7 +110,7 @@ class stuff(object):
          self.A[i,:] = solve(gg, gy)
 
     
-   def update_G(self):
+    def update_G(self):
        
        self.gg = np.zeros_like(self.G)
        for i in range(self.N):
@@ -122,7 +123,7 @@ class stuff(object):
          
        self.G = self.gg
 
-   def update_F(self):
+    def update_F(self):
 
        for i in range(self.N):
          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
@@ -132,7 +133,7 @@ class stuff(object):
          ismodel = np.dot(imodel , pi)
          self.F[i] = self.data[i]/ismodel
 
-   def nll(self):
+    def nll(self):
    
        nll = 0.
        for i in range(self.N):
@@ -144,12 +145,12 @@ class stuff(object):
          nll += 0.5*np.sum((ismodel - data[i,:])**2.)
        return nll
 
-   def update(self, maxiter, check_iter, min_iter, tol):
+    def update(self, maxiter, check_iter, min_iter, tol):
   
         print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
-            self.update_X()
+            #self.update_X()
             self.update_A()
             self.update_G()
             self.update_F()
