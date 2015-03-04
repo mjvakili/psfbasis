@@ -72,8 +72,8 @@ class stuff(object):
             self.latents[:, i] = np.dot(ilTl, lTx)
         return self.latents.T 
 
-     
-    def update_X(self):
+    
+    def update_dmm(self):
         
        
         self.PP = np.zeros((self.D,self.D))
@@ -85,11 +85,11 @@ class stuff(object):
           temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
           temp = temp.reshape((self.d-2)*(self.d-2))
           pi = shift.matrix(temp)
-          self.PP += np.dot(pi, pi.T)
-          self.FF += np.dot(pi, self.data[i, :].reshape(1,self.D).T)/(self.F[i])
+          #self.PP += np.dot(pi, pi.T)
+          #self.FF += np.dot(pi, self.data[i, :].reshape(1,self.D).T)/(self.F[i])
           self.dmm[i,:] = self.data[i,:]- np.dot(self.X, pi)
         
-        self.X = solve(self.PP, self.FF)
+        #self.X = solve(self.PP, self.FF)
    
         #temp = self.data[2].reshape(self.d , self.d)[1:-1,1:-1]
         #temp = temp.reshape((self.d-2)*(self.d-2))
@@ -129,7 +129,13 @@ class stuff(object):
          
        self.G = self.gg
        self.orthonormalize()
-
+       for i in range(self.N):
+         
+         temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
+         temp = temp.reshape((self.d-2)*(self.d-2))
+         pi = shift.imatrix(temp)   
+         self.X += np.sum(self.data[i] - self.F[i]*np.dot(self.A[i], self.G), axis=0)
+         self.X /= self.N
     def update_F(self):
 
        self.d = int(np.sqrt(self.D))
@@ -176,7 +182,7 @@ class stuff(object):
         #print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
-            #self.update_X()
+            self.update_dmm()
             self.update_A()
             self.update_G()
             #self.update_F()
@@ -190,4 +196,3 @@ class stuff(object):
             else:
                 nll = new_nll
         self.nll = new_nll 
-
