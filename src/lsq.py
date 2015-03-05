@@ -42,17 +42,25 @@ class stuff(object):
           #shifting and normalizing
         for i in range(self.N):
           self.F[i] = np.sum(self.data[i,:])
-          self.dm[i,:] = modelshifter.shifter(self.data[i,:])/self.F[i]
+          self.dm[i,:] = shifter.shifter(self.data[i,:])/self.F[i]
 
-          #averaging to get the mean
+        #averaging to get the mean
         self.X = np.sum(self.dm, axis=0)/self.N
-        #subtracting the mean from the data
-        self.dmm = self.data - self.X    
-        #pca on the mean-subtracted data
+        #subtracting the mean from the shifted/normalized data
+        self.dmm = self.dm - self.X
+        
+        """
+        for i in range(self.N):
+          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
+          temp = temp.reshape((self.d-2)*(self.d-2))
+          pi = shift.matrix(temp)
+          self.dmm[i] = self.data[i] - self.F[i]*np.dot(self.X,pi)""" 
+   
+        #pca on the mean-subtracted shifted/normalized data
         self.lambdas, evals = self.svd_pca(self.dmm)
         self.G = self.lambdas[:self.K, :]
         self.A  = self._e_step()
-        #update all the parameters
+        
 
 
     def svd_pca(self, data):
@@ -72,14 +80,14 @@ class stuff(object):
             self.latents[:, i] = np.dot(ilTl, lTx)
         return self.latents.T 
 
-    
+     
     def update_dmm(self):
         
        
         self.PP = np.zeros((self.D,self.D))
         self.d = int(np.sqrt(self.D))
         self.FF = np.zeros((self.D))
-        self.dmm *= 0.
+        #self.dmm *= 0.
  
         for i in range(self.N):
           temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
@@ -87,7 +95,7 @@ class stuff(object):
           pi = shift.matrix(temp)
           #self.PP += np.dot(pi, pi.T)
           #self.FF += np.dot(pi, self.data[i, :].reshape(1,self.D).T)/(self.F[i])
-          self.dmm[i,:] = self.data[i,:]- np.dot(self.X, pi)
+          self.dmm[i,:] = self.data[i,:]/self.F[i] - np.dot(self.X, pi)
         
         #self.X = solve(self.PP, self.FF)
    
@@ -134,8 +142,8 @@ class stuff(object):
          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
          temp = temp.reshape((self.d-2)*(self.d-2))
          pi = shift.imatrix(temp)   
-         self.X += np.sum(self.data[i] - self.F[i]*np.dot(self.A[i], self.G), axis=0)
-         self.X /= self.N
+         self.X += np.dot(self.data[i] - self.F[i]*np.dot(self.A[i], self.G), pi)
+       self.X /= self.N
     def update_F(self):
 
        self.d = int(np.sqrt(self.D))
@@ -185,11 +193,11 @@ class stuff(object):
             self.update_dmm()
             self.update_A()
             self.update_G()
-            #self.update_F()
+            self.update_F()
             if np.mod(i, check_iter) == 0:
                 new_nll = self.nll() 
-                print 'NLL at step %d is:' % i, new_nll
-            if (((nll - new_nll) / nll) < tol) & (min_iter < i):
+                print new_nll
+            if (min_iter < i):
                 print 'Stopping at step %d with NLL:' % i, new_nll
                 self.nll = new_nll
                 break
