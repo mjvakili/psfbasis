@@ -41,17 +41,18 @@ class stuff(object):
         self.update(max_iter, check_iter, min_iter, tol)
         
         
+         
     def initialize(self):
         """
         initializing the parameters
         """         
         self.dm = np.zeros((self.N,self.D))
           #shifting and normalizing
+        """init F"""
         for i in range(self.N):
-          """flux=sum"""
-          self.F[i] = np.sum(self.data[i,:])
-          """shift and then normalize that shit"""
-          self.dm[i,:] = shifter.shifter(self.data[i,:])/self.F[i]
+          
+          self.F[i] = np.sum(self.data[i,:])   #flux = sum of pixel intensities
+          self.dm[i,:] = shifter.shifter(self.data[i,:])/self.F[i]   #shift each star to its center and normalize it
         
         #initializing the mean. The mean will later be inserted into eigen-vectors.
         mean = np.mean(self.dm, axis=0)
@@ -61,25 +62,24 @@ class stuff(object):
         
         #pca on the mean-subtracted shifted/normalized data
         u , s , vh = la.svd(self.dmm)
-        
+        """init A"""
         #amplitudes
         coefficients = u[:, :self.K-1] * s[None, :self.K-1]
         ones = np.ones((self.N,1))
         self.A = np.hstack([ones , coefficients])
-        
+        """init G"""
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.K-1,:]])
 
         
-     
+"""!!!!!!!!!!!! seems unnecessary for now. svd is already implemented inside initialize()""""     
 
-    def svd_pca(self, data):
-        """
-        PCA using a singular value decomposition.
-        """
-        U, S, eigvec = np.linalg.svd(data)
-        eigval = S ** 2. / (data.shape[0] - 1.)
-        return eigvec, eigval
+#    def svd_pca(self, data):
+
+#        U, S, eigvec = np.linalg.svd(data)
+#        eigval = S ** 2. / (data.shape[0] - 1.)
+#        return eigvec, eigval
+
 
     def _e_step(self):
   
