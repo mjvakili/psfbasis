@@ -3,6 +3,7 @@ import ms
 import shifter
 import shift
 import numpy as np
+import scipy.optimize as op
 from   scipy.linalg import solve
 import scipy.linalg as la
 
@@ -20,7 +21,7 @@ class stuff(object):
         self.Q = Q                       #latent dimensionality (note that this also includes the mean, meaning that in initialization
                                          #                       Q-1 pca components are kept!
         self.data = np.atleast_2d(data)  #making sure the data has the right dimension
-        self.ivar = ivar                 #variance with the same dimensiona as the data
+        #self.ivar = ivar                 #variance with the same dimensiona as the data
         
         """ outputs of the code: NxQ amplitude (coefficients) matrix;
                                  QxD basis (eigen vectors) matrix
@@ -28,7 +29,7 @@ class stuff(object):
         """
                
         self.A = np.zeros((self.N,self.Q))    #Creating the amplitude matrix
-        self.G = np.zeros((self.K,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
+        self.G = np.zeros((self.Q,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
                                               # a D-dimensional object!
         self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of N observations.
 
@@ -56,18 +57,18 @@ class stuff(object):
         mean = np.mean(self.dm, axis=0)
 
         #subtracting the mean from the shifted/normalized data
-        self.dmm = self.dm - self.X
+        self.dmm = self.dm - mean
         
         #pca on the mean-subtracted shifted/normalized data
         u , s , vh = la.svd(self.dmm)
         """init A"""
         #amplitudes
-        coefficients = u[:, :self.K-1] * s[None, :self.K-1]
+        coefficients = u[:, :self.Q-1] * s[None, :self.Q-1]
         ones = np.ones((self.N,1))
         self.A = np.hstack([ones , coefficients])
         """init G"""
         #eigen basis functions including the mean
-        self.G = np.vstack([mean , vh[:self.K-1,:]])
+        self.G = np.vstack([mean , vh[:self.Q-1,:]])
 
         
 
@@ -104,8 +105,8 @@ class stuff(object):
        nll = 0.
 
        for i in range(self.N):
-         Ki = shift.matrix(data[i,:])
-         model_i = self.F[i]*np.dot(np.dot(self.A[i], self.G) , Ki)
+         Ki = shift.matrix(self.data[i,:])
+         model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.G) , Ki)
          nll += 0.5*np.sum((model_i - self.data[i,:])**2.)
        return nll
 
@@ -115,7 +116,7 @@ class stuff(object):
             return np.sqrt(np.dot(v, v))
 
         self.G[0] /= get_normalization(self.G[0])
-        for i in range(1, self.K):
+        for i in range(1, self.Q):
             for j in range(0, i):
                 v = np.dot(self.G[i], self.G[j])
                 self.G[i] -=  v * self.G[j]
