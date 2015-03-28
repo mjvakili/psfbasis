@@ -9,7 +9,7 @@ import scipy.linalg as la
 
 class stuff(object):
    
-    def __init__(self, data, Q, min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
+     def __init__(self, data, Q, min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
 
         """ inputs of the code: NxD data matrix;
                                 NxD uncertainty matrix;
@@ -18,8 +18,7 @@ class stuff(object):
 
         self.N = data.shape[0]           #number of observations
         self.D = data.shape[1]           #input dimensionality, dimension of each observed data point
-        self.Q = Q                       #latent dimensionality (note that this also includes the mean,
-                                         #                       meaning that in initialization
+        self.Q = Q                       #latent dimensionality (note that this also includes the mean, meaning that in initialization
                                          #                       Q-1 pca components are kept!
         self.data = np.atleast_2d(data)  #making sure the data has the right dimension
         self.ivar = ivar                 #variance with the same dimensiona as the data
@@ -32,8 +31,7 @@ class stuff(object):
         self.A = np.zeros((self.N,self.Q))    #Creating the amplitude matrix
         self.G = np.zeros((self.K,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
                                               # a D-dimensional object!
-        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector.
-                                              #conatins flux values of N observations.
+        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of N observations.
 
 
         """ initialization of FAG by means of normalizing, shifting, and singular-value decomposition"""
@@ -43,7 +41,7 @@ class stuff(object):
         self.update(max_iter, check_iter, min_iter, tol)
         
         
-    def initialize(self):
+     def initialize(self):
         """
         initializing the parameters
         """         
@@ -73,16 +71,8 @@ class stuff(object):
         self.G = np.vstack([mean , vh[:self.K-1,:]])
 
         
-"""!!!!!!!!!!!! svd_pca seems unnecessary for now since 
-   svd is already implemented inside initialize()""""     
 
-#    def svd_pca(self, data):
-
-#        U, S, eigvec = np.linalg.svd(data)
-#        eigval = S ** 2. / (data.shape[0] - 1.)
-#        return eigvec, eigval
-
-    def F_step(self):
+     def F_step(self):
 
         for i in range(self.N):
           Ki = shift.matrix(self.data[i,:])  #K_i for star i  
@@ -90,7 +80,7 @@ class stuff(object):
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
        
-    def A_step(self):
+     def A_step(self):
         
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
@@ -98,7 +88,7 @@ class stuff(object):
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
-    def G_step(self):
+     def G_step(self):
        
        G_temp = np.zeros_like(self.G)
        for i in range(self.N):
@@ -110,7 +100,7 @@ class stuff(object):
        self.G = G_temp/self.N
 
 
-    def nll(self):
+     def nll(self):
    
        nll = 0.
 
@@ -120,7 +110,7 @@ class stuff(object):
          nll += 0.5*np.sum((model_i - self.data[i,:])**2.)
        return nll
 
-    def orthonormalize(self):
+     def orthonormalize(self):
        
         def get_normalization(v):
             return np.sqrt(np.dot(v, v))
@@ -134,7 +124,7 @@ class stuff(object):
             self.G[i] /= get_normalization(self.G[i])
 
 
-    def update(self, max_iter, check_iter, min_iter, tol):
+     def update(self, max_iter, check_iter, min_iter, tol):
   
         #print 'Starting NLL =', self.nll()
         nll = self.nll()
