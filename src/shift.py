@@ -33,7 +33,9 @@ def matrix(data):
 
   return hf.T
 def imatrix(data):
-  
+  # note to self: cubic spline is not exactly invertible. shift matrix is in most cases a singular matrix
+  #  replace it with a cubic spline matrix with negative shift instead.
+                  
   """
   input:
   
