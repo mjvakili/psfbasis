@@ -24,9 +24,9 @@ def matrix(data):
   center = c3.find_centroid(data)
   
   dx  , dy = center[0] , center[1]
-  b = ms.B(shap).T
-  phx = ms.phi(-dx , shap)
-  phy = ms.phi(dy , shap)
+  b = ms.B(shap).T[-1:1,-1:1]
+  phx = ms.phi(-dx , shap)[-1:1,-1:1]
+  phy = ms.phi(dy , shap)[-1:1,-1:1]
   hx = np.dot(phx , np.linalg.inv(b))
   hy = np.dot(np.linalg.inv(b) , phy)
   hf = np.kron(hx.T, hy)
@@ -54,9 +54,9 @@ def imatrix(data):
   center = c3.find_centroid(data)
   
   dx  , dy = center[0] , center[1]
-  b = ms.B(shap).T
-  phx = ms.phi(dx , shap)
-  phy = ms.phi(-dy , shap)
+  b = ms.B(shap).T[-1:1,-1:1]
+  phx = ms.phi(dx , shap)[-1:1,-1:1]
+  phy = ms.phi(-dy , shap)[-1:1,-1:1]
   hx = np.dot(phx , np.linalg.inv(b))
   hy = np.dot(np.linalg.inv(b) , phy)
   hf = np.kron(hx.T, hy)
