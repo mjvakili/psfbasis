@@ -9,12 +9,12 @@ def matrix(data):
   
   dx = shift along the x-axis
   dy = shift along the y-axis
-  D = shape x shape or shape D^.5
+  M = shape x shape or shape M^.5
   
   output:
 
-  DxD matrix that can be applied to 
-  a flattened D-dimensional data vector
+  MxM matrix that can be applied to 
+  a flattened M-dimensional data vector
   """
   
   shap = int((data.shape[0])**.5)
@@ -41,12 +41,12 @@ def imatrix(data):
   
   dx = shift along the x-axis
   dy = shift along the y-axis
-  D = shape x shape or shape D^.5
+  M = shape x shape or shape M^.5
   
   output:
 
-  DxD matrix that can be applied to 
-  a flattened D-dimensional data vector
+  MxM matrix that can be applied to 
+  a flattened M-dimensional data vector
   """
   
   shap = int((data.shape[0])**.5)
