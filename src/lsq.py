@@ -41,7 +41,6 @@ class stuff(object):
         self.update(max_iter, check_iter, min_iter, tol)
         
         
-         
     def initialize(self):
         """
         initializing the parameters
@@ -80,109 +79,46 @@ class stuff(object):
 #        eigval = S ** 2. / (data.shape[0] - 1.)
 #        return eigvec, eigval
 
+    def F_step(self):
 
-    def _e_step(self):
-  
-        self.latents = np.zeros((self.K, self.N))
         for i in range(self.N):
-            ilTl = np.linalg.inv(np.dot(self.G , self.G.T))
-            lTx = np.dot(self.G, self.dmm[i])
-            self.latents[:, i] = np.dot(ilTl, lTx)
-        return self.latents.T 
-
-     
-    def update_dmm(self):
+          Ki = shift.matrix(self.data[i,:])  #K_i for star i  
+          Mi = np.dot(self.A[i,:],np.dot(self.G,Ki))
+          cov = np.linalg.inv(np.dot(Mi.T, Mi))
+          self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
+       
+    def A_step(self):
         
+        for i in range(self.N):  
+          Ki = shift.matrix(self.data[i,:])   
+          Mi = self.F[i]*np.dot(self.G,Ki)
+          cov = np.linalg.inv(np.dot(Mi.T, Mi))
+          self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
+
+    def G_step(self):
        
-        self.PP = np.zeros((self.D,self.D))
-        self.d  = int(np.sqrt(self.D))
-        self.FF = np.zeros((self.D))
-        #self.dmm *= 0.
- 
-        for i in range(self.N):
-          temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
-          temp = temp.reshape((self.d-2)*(self.d-2))
-          pi = shift.matrix(temp)
-          #self.PP += np.dot(pi, pi.T)
-          #self.FF += np.dot(pi, self.data[i, :].reshape(1,self.D).T)/(self.F[i])
-          self.dmm[i,:] = self.data[i,:]/self.F[i] - np.dot(self.X, pi)
-        
-        #self.X = solve(self.PP, self.FF)
-   
-        #temp = self.data[2].reshape(self.d , self.d)[1:-1,1:-1]
-        #temp = temp.reshape((self.d-2)*(self.d-2))
-        #pi = shift.matrix(temp)
-        #r = np.dot(self.X, pi)
-        #r = solve(np.dot(pi,pi.T)
-
-
-    def update_A(self):
-       
-       self.d = int(np.sqrt(self.D))
-       for i in range(self.N):  
-         temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
-         temp = temp.reshape((self.d-2)*(self.d-2))
-         pi = shift.matrix(temp)   
-         igtilde = np.dot(self.G, pi)
-         gg = np.dot(igtilde, igtilde.T)
-         gy = np.dot(igtilde, self.dmm[i,:])
-         self.A[i,:] = solve(gg, gy)
-
-    
-    def update_G(self):
-       
-       self.d = int(np.sqrt(self.D))
-       self.gg = np.zeros_like(self.G)
+       G_temp = np.zeros_like(self.G)
        for i in range(self.N):
-         temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
-         temp = temp.reshape((self.d-2)*(self.d-2))
-         pi = shift.imatrix(temp)   
-         aa = np.outer(self.A[i,:].T, self.A[i,:])
-         ay = np.zeros((self.K,self.D))
-         for j in range(self.D):
-         
-          #print aa.shape
-          ay[:,j] = self.A[i,:].T*self.dmm[i,j]
-         self.gg += np.dot(solve(aa, ay),pi)/self.N
-         
-       self.G = self.gg
-       self.orthonormalize()
-       for i in range(self.N):
-         
-         temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
-         temp = temp.reshape((self.d-2)*(self.d-2))
-         pi = shift.imatrix(temp)   
-         self.X += np.dot(self.data[i] - self.F[i]*np.dot(self.A[i], self.G), pi)
-       self.X /= self.N
-    def update_F(self):
+         Ki = shift.imatrix(self.data[i,:])
+         Mi = self.F[i]*self.A[i,None]
+         yi = np.dot(self.data[i,:] , Ki)
+         cov = np.linalg.inv(np.dot(Mi.T, Mi))
+         G_temp += np.dot(cov, np.dot(Mi.T, self.data[i,:]))
+       self.G = G_temp/self.N
 
-       self.d = int(np.sqrt(self.D))
-       for i in range(self.N):
-         temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
-         temp = temp.reshape((self.d-2)*(self.d-2))
-         pi = shift.matrix(temp)
-         imodel = np.dot(self.A[i], self.G) + self.X 
-         ismodel = np.dot(imodel , pi)
-         #print ismodel.shape
-         self.F[i] = np.max(self.data[i])/np.max(ismodel)
 
     def nll(self):
    
        nll = 0.
-       self.d = int(np.sqrt(self.D))
+
        for i in range(self.N):
-         temp = self.data[i, :].reshape(self.d , self.d)[1:-1,1:-1]
-         temp = temp.reshape((self.d-2)*(self.d-2))
-         pi = shift.matrix(temp)
-         imodel = np.dot(self.A[i], self.G) + self.X 
-         ismodel = self.F[i]*np.dot(imodel , pi)
-         nll += 0.5*np.sum((ismodel - self.data[i,:])**2.)
+         Ki = shift.matrix(data[i,:])
+         model_i = self.F[i]*np.dot(np.dot(self.A[i], self.G) , Ki)
+         nll += 0.5*np.sum((model_i - self.data[i,:])**2.)
        return nll
 
     def orthonormalize(self):
-        """
-        Ortho_Normalize Gs
-        """
+       
         def get_normalization(v):
             return np.sqrt(np.dot(v, v))
 
@@ -200,10 +136,9 @@ class stuff(object):
         #print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
-            self.update_dmm()
-            self.update_A()
-            self.update_G()
-            self.update_F()
+            self.F_step()
+            self.A_step()
+            self.G_step()
             if np.mod(i, check_iter) == 0:
                 new_nll = self.nll() 
                 print new_nll
