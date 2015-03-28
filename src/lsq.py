@@ -18,7 +18,8 @@ class stuff(object):
 
         self.N = data.shape[0]           #number of observations
         self.D = data.shape[1]           #input dimensionality, dimension of each observed data point
-        self.Q = Q                       #latent dimensionality (note that this also includes the mean, meaning that in initialization
+        self.Q = Q                       #latent dimensionality (note that this also includes the mean,
+                                         #                       meaning that in initialization
                                          #                       Q-1 pca components are kept!
         self.data = np.atleast_2d(data)  #making sure the data has the right dimension
         self.ivar = ivar                 #variance with the same dimensiona as the data
@@ -31,7 +32,8 @@ class stuff(object):
         self.A = np.zeros((self.N,self.Q))    #Creating the amplitude matrix
         self.G = np.zeros((self.K,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
                                               # a D-dimensional object!
-        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of N observations.
+        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector.
+                                              #conatins flux values of N observations.
 
 
         """ initialization of FAG by means of normalizing, shifting, and singular-value decomposition"""
@@ -71,7 +73,8 @@ class stuff(object):
         self.G = np.vstack([mean , vh[:self.K-1,:]])
 
         
-"""!!!!!!!!!!!! seems unnecessary for now. svd is already implemented inside initialize()""""     
+"""!!!!!!!!!!!! svd_pca seems unnecessary for now since 
+   svd is already implemented inside initialize()""""     
 
 #    def svd_pca(self, data):
 
