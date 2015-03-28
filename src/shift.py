@@ -31,7 +31,7 @@ def matrix(data):
   hy = np.dot(np.linalg.inv(b) , phy)
   hf = np.kron(hx.T, hy)
 
-  return hf
+  return hf.T
 def imatrix(data):
   
   """
@@ -61,4 +61,4 @@ def imatrix(data):
   hy = np.dot(np.linalg.inv(b) , phy)
   hf = np.kron(hx.T, hy)
 
-  return hf
+  return hf.T
