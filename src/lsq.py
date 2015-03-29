@@ -69,7 +69,7 @@ class stuff(object):
         """init G"""
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.Q-1,:]])
-
+        print self.nll()
         
 
      def F_step(self):
@@ -77,27 +77,33 @@ class stuff(object):
         for i in range(self.N):
           Ki = shift.matrix(self.data[i,:])  #K_i for star i  
           Mi = np.dot(self.A[i,:],np.dot(self.G,Ki))
-          cov = np.linalg.inv(np.dot(Mi.T, Mi))
+          #cov = np.linalg.inv(np.dot(Mi.T, Mi))                 !!!!!!!!!!!!!!!!!!!!!
+          cov = (np.dot(Mi.T,Mi))**-1.
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
        
      def A_step(self):
         
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
-          Mi = self.F[i]*np.dot(self.G,Ki)
+          Mi = self.F[i]*np.dot(self.G,Ki).T                    ########SHOULD THERE BE A TRANSPOSE HERE? ASK HOGG AND/OR DFM AND/OR ROSS 
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
      def G_step(self):
-       
+       y_temp = np.zeros_like(self.data)
+       A_temp = np.zeros_like(self.A)
        G_temp = np.zeros_like(self.G)
        for i in range(self.N):
+        A_temp[i,None] = self.F[i]*self.A[i,None]
+        for j in range(self.D):
          Ki = shift.imatrix(self.data[i,:])
-         Mi = self.F[i]*self.A[i,None]
-         yi = np.dot(self.data[i,:] , Ki)
-         cov = np.linalg.inv(np.dot(Mi.T, Mi))
-         G_temp += np.dot(cov, np.dot(Mi.T, self.data[i,:]))
-       self.G = G_temp/self.N
+         y_temp[i, j] = np.dot(self.data[i,:] , Ki)[j]
+       
+       for j in range(self.D):
+         
+         cov = np.linalg.inv(np.dot(A_temp.T, A_temp))
+         self.G[:,j]= np.dot(cov, np.dot(A_temp.T, y_temp[:,j]))
+   
 
 
      def nll(self):
@@ -106,10 +112,11 @@ class stuff(object):
 
        for i in range(self.N):
          Ki = shift.matrix(self.data[i,:])
+      
          model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.G) , Ki)
          nll += 0.5*np.sum((model_i - self.data[i,:])**2.)
        return nll
-
+     """
      def orthonormalize(self):
        
         def get_normalization(v):
@@ -122,11 +129,11 @@ class stuff(object):
                 self.G[i] -=  v * self.G[j]
                     
             self.G[i] /= get_normalization(self.G[i])
-
+     """
 
      def update(self, max_iter, check_iter, min_iter, tol):
   
-        #print 'Starting NLL =', self.nll()
+        print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
             self.F_step()
