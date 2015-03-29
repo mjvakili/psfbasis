@@ -17,7 +17,7 @@ class stuff(object):
         """
 
         self.N = data.shape[0]           #number of observations
-        self.D = data.shape[1]           #input dimensionality, dimension of each observed data point
+        self.M = data.shape[1]           #input dimensionality, dimension of each observed data point
         self.Q = Q                       #latent dimensionality (note that this also includes the mean, meaning that in initialization
                                          #                       Q-1 pca components are kept!
         self.data = np.atleast_2d(data)  #making sure the data has the right dimension
@@ -29,7 +29,7 @@ class stuff(object):
         """
                
         self.A = np.zeros((self.N,self.Q))    #Creating the amplitude matrix
-        self.G = np.zeros((self.Q,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
+        self.G = np.zeros((self.Q,self.M))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
                                               # a D-dimensional object!
         self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of N observations.
 
@@ -45,7 +45,7 @@ class stuff(object):
         """
         initializing the parameters
         """         
-        self.dm = np.zeros((self.N,self.D))
+        self.dm = np.zeros((self.N,self.M))
           #shifting and normalizing
         """init F"""
         for i in range(self.N):
@@ -95,11 +95,11 @@ class stuff(object):
        G_temp = np.zeros_like(self.G)
        for i in range(self.N):
         A_temp[i,None] = self.F[i]*self.A[i,None]
-        for j in range(self.D):
+        for j in range(self.M):
          Ki = shift.imatrix(self.data[i,:])
          y_temp[i, j] = np.dot(self.data[i,:] , Ki)[j]
        
-       for j in range(self.D):
+       for j in range(self.M):
          
          cov = np.linalg.inv(np.dot(A_temp.T, A_temp))
          self.G[:,j]= np.dot(cov, np.dot(A_temp.T, y_temp[:,j]))
