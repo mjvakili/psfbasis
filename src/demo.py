@@ -1,6 +1,14 @@
 import numpy as np
 from stuff import stuff
 import shift
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import rc
+rc('font',**{'family':'serif','serif':'Computer Modern Roman','size':12})
+rc('text', usetex=True)
+from matplotlib import cm
+import numpy as np
 
 data = np.loadtxt("varpsf.txt")
 Q = 6
