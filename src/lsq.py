@@ -3,6 +3,7 @@ import ms
 import shifter
 import shift
 import numpy as np
+import scipy.optimize as op
 from   scipy.linalg import solve
 import scipy.linalg as la
 
@@ -10,13 +11,13 @@ class stuff(object):
    
      def __init__(self, data, Q, min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
 
-        """ inputs of the code: NxM data matrix;
-                                NxM uncertainty matrix;
+        """ inputs of the code: NxD data matrix;
+                                NxD uncertainty matrix;
                                 Q = latent dimensionality
         """
 
         self.N = data.shape[0]           #number of observations
-        self.M = data.shape[1]           #input dimensionality, dimension of each observed data point
+        self.D = data.shape[1]           #input dimensionality, dimension of each observed data point
         self.Q = Q                       #latent dimensionality (note that this also includes the mean, meaning that in initialization
                                          #                       Q-1 pca components are kept!
         self.data = np.atleast_2d(data)  #making sure the data has the right dimension
@@ -28,10 +29,9 @@ class stuff(object):
         """
                
         self.A = np.zeros((self.N,self.Q))    #Creating the amplitude matrix
-        self.G = np.zeros((self.Q,self.M))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
-                                              # a M-dimensional object!
-        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of
-                                              # N observations.
+        self.G = np.zeros((self.Q,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
+                                              # a D-dimensional object!
+        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of N observations.
 
 
         """ initialization of FAG by means of normalizing, shifting, and singular-value decomposition"""
@@ -45,7 +45,7 @@ class stuff(object):
         """
         initializing the parameters
         """         
-        self.dm = np.zeros((self.N,self.M))
+        self.dm = np.zeros((self.N,self.D))
           #shifting and normalizing
         """init F"""
         for i in range(self.N):
@@ -77,6 +77,7 @@ class stuff(object):
         for i in range(self.N):
           Ki = shift.matrix(self.data[i,:])  #K_i for star i  
           Mi = np.dot(self.A[i,:],np.dot(self.G,Ki))
+          #print Mi.shape
           #cov = np.linalg.inv(np.dot(Mi.T, Mi))                 !!!!!!!!!!!!!!!!!!!!!
           cov = (np.dot(Mi.T,Mi))**-1.
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
@@ -85,8 +86,9 @@ class stuff(object):
         
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
-          Mi = self.F[i]*np.dot(self.G,Ki).T ########SHOULD THERE BE A TRANSPOSE HERE?ASK HOGG AND/OR DFM,ROSS 
+          Mi = self.F[i]*np.dot(self.G,Ki).T                    ########SHOULD THERE BE A TRANSPOSE HERE? ASK HOGG AND/OR DFM AND/OR ROSS 
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
+          #print "Ai" , self.A[i,:].shape , "cov" , cov.shape, "Mi" , Mi.shape, "di" , self.data[i,:].shape
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
      def G_step(self):
@@ -95,15 +97,16 @@ class stuff(object):
        G_temp = np.zeros_like(self.G)
        for i in range(self.N):
         A_temp[i,None] = self.F[i]*self.A[i,None]
-        for j in range(self.M):
+        for j in range(self.D):
          Ki = shift.imatrix(self.data[i,:])
          y_temp[i, j] = np.dot(self.data[i,:] , Ki)[j]
        
-       for j in range(self.M):
+       for j in range(self.D):
          
          cov = np.linalg.inv(np.dot(A_temp.T, A_temp))
+         #print cov.shape, A_temp.shape, y_temp[:,j].shape
          self.G[:,j]= np.dot(cov, np.dot(A_temp.T, y_temp[:,j]))
-   
+       #self.G = G_temp/self.N
 
 
      def nll(self):
@@ -112,7 +115,8 @@ class stuff(object):
 
        for i in range(self.N):
          Ki = shift.matrix(self.data[i,:])
-      
+         #print np.dot(self.A[i,:],self.G).shape
+         #print Ki.shape
          model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.G) , Ki)
          nll += 0.5*np.sum((model_i - self.data[i,:])**2.)
        return nll
@@ -133,19 +137,19 @@ class stuff(object):
 
      def update(self, max_iter, check_iter, min_iter, tol):
   
-        print 'Starting NLL =', self.nll()
+        #print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
             self.F_step()
             self.A_step()
             self.G_step()
             if np.mod(i, check_iter) == 0:
-                new_nll = self.nll() 
-                print new_nll
-            if (min_iter < i):
+                new_nll =  new_nll = self.nll()
+                print 'NLL at step %d is:' % i, new_nll
+            if (((nll - new_nll) / nll) < tol) & (min_iter < i):
                 print 'Stopping at step %d with NLL:' % i, new_nll
                 self.nll = new_nll
                 break
             else:
                 nll = new_nll
-        self.nll = new_nll 
+        self.nll = new_nll
