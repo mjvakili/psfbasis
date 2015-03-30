@@ -3,7 +3,6 @@ import ms
 import shifter
 import shift
 import numpy as np
-import scipy.optimize as op
 from   scipy.linalg import solve
 import scipy.linalg as la
 
