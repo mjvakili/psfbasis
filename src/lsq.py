@@ -51,7 +51,7 @@ class stuff(object):
         for i in range(self.N):
           
           self.F[i] = np.sum(self.data[i,:])   #flux = sum of pixel intensities
-          self.dm[i,:] = shifter.shifter(self.data[i,:])/self.F[i]   #shift each star to its center and normalize it
+          self.dm[i,:] = np.dot(self.data[i,:], shift.imatrix(self.data[i,:]))/self.F[i]   #shift each star to its center and normalize it
         
         #initializing the mean. The mean will later be inserted into eigen-vectors.
         mean = np.mean(self.dm, axis=0)
@@ -69,9 +69,8 @@ class stuff(object):
         """init G"""
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.Q-1,:]])
-        self.orthonormalize()
         print self.nll()
-        
+        self.orthonormalize()
 
      def F_step(self):
 
@@ -141,11 +140,16 @@ class stuff(object):
         #print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
+
+            np.savetxt("Gprime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
+            np.savetxt("Aprime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
+            np.savetxt("Fprime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
+
             self.F_step()
             self.A_step()
             self.G_step()
             self.orthonormalize()
-            np.savetxt("G_2%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
+
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
                 print 'NLL at step %d is:' % i, new_nll
