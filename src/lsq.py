@@ -69,6 +69,7 @@ class stuff(object):
         """init G"""
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.Q-1,:]])
+        self.orthonormalize()
         print self.nll()
         
 
@@ -120,7 +121,7 @@ class stuff(object):
          model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.G) , Ki)
          nll += 0.5*np.sum((model_i - self.data[i,:])**2.)
        return nll
-     """
+     
      def orthonormalize(self):
        
         def get_normalization(v):
@@ -133,7 +134,7 @@ class stuff(object):
                 self.G[i] -=  v * self.G[j]
                     
             self.G[i] /= get_normalization(self.G[i])
-     """
+     
 
      def update(self, max_iter, check_iter, min_iter, tol):
   
@@ -143,6 +144,7 @@ class stuff(object):
             self.F_step()
             self.A_step()
             self.G_step()
+            self.orthonormalize()
             np.savetxt("G_2%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
