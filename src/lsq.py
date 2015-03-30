@@ -143,6 +143,7 @@ class stuff(object):
             self.F_step()
             self.A_step()
             self.G_step()
+            np.savetxt("G_2%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
                 print 'NLL at step %d is:' % i, new_nll
