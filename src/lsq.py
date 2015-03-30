@@ -10,8 +10,8 @@ class stuff(object):
    
      def __init__(self, data, Q, min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
 
-        """ inputs of the code: NxD data matrix;
-                                NxD uncertainty matrix;
+        """ inputs of the code: NxM data matrix;
+                                NxM uncertainty matrix;
                                 Q = latent dimensionality
         """
 
@@ -29,8 +29,9 @@ class stuff(object):
                
         self.A = np.zeros((self.N,self.Q))    #Creating the amplitude matrix
         self.G = np.zeros((self.Q,self.M))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
-                                              # a D-dimensional object!
-        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of N observations.
+                                              # a M-dimensional object!
+        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of
+                                              # N observations.
 
 
         """ initialization of FAG by means of normalizing, shifting, and singular-value decomposition"""
@@ -84,7 +85,7 @@ class stuff(object):
         
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
-          Mi = self.F[i]*np.dot(self.G,Ki).T                    ########SHOULD THERE BE A TRANSPOSE HERE? ASK HOGG AND/OR DFM AND/OR ROSS 
+          Mi = self.F[i]*np.dot(self.G,Ki).T ########SHOULD THERE BE A TRANSPOSE HERE?ASK HOGG AND/OR DFM,ROSS 
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
