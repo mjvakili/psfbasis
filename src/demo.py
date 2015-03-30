@@ -1,5 +1,5 @@
 import numpy as np
-from stuff import stuff
+from lsq import stuff
 import shift
 import matplotlib.pyplot as plt
 import matplotlib
@@ -12,7 +12,8 @@ import numpy as np
 
 data = np.loadtxt("varpsf.txt")
 Q = 6
-h = stuff(data, 2 , min_iter=1, max_iter=20, check_iter=1, tol=1.e-12)
+maxiter = 20
+h = stuff(data, 2 , min_iter=1, max_iter=maxiter, check_iter=1, tol=1.e-12)
 for j in range(maxiter):
   
   img = np.loadtxt("G_6(%d).txt"(%range(maxiter)[j]+1)).reshape(Q,15,15)
