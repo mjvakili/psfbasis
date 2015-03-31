@@ -94,7 +94,6 @@ class stuff(object):
      def G_step(self):
        y_temp = np.zeros_like(self.data)
        A_temp = np.zeros_like(self.A)
-       G_temp = np.zeros_like(self.G)
        for i in range(self.N):
         A_temp[i,None] = self.F[i]*self.A[i,None]
         for j in range(self.D):
@@ -141,14 +140,15 @@ class stuff(object):
         nll = self.nll()
         for i in range(max_iter):
 
-            np.savetxt("Gprime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
-            np.savetxt("Aprime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
-            np.savetxt("Fprime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
-
+            np.savetxt("G_GFBrime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
+            np.savetxt("A_GFBprime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
+            np.savetxt("F_GFBprime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
+            
+            self.orthonormalize()
             self.F_step()
             self.A_step()
             self.G_step()
-            self.orthonormalize()
+            
 
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
