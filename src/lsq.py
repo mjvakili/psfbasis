@@ -70,7 +70,7 @@ class stuff(object):
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.Q-1,:]])
         print self.nll()
-        self.orthonormalize()
+        #self.orthonormalize()
 
      def F_step(self):
 
@@ -96,9 +96,8 @@ class stuff(object):
        A_temp = np.zeros_like(self.A)
        for i in range(self.N):
         A_temp[i,None] = self.F[i]*self.A[i,None]
-        for j in range(self.D):
-         Ki = shift.imatrix(self.data[i,:])
-         y_temp[i, j] = np.dot(self.data[i,:] , Ki)[j]
+        Ki = shift.imatrix(self.data[i,:]) 
+        y_temp[i] = np.dot(self.data[i,:] , Ki)
        
        for j in range(self.D):
          
@@ -140,9 +139,9 @@ class stuff(object):
         nll = self.nll()
         for i in range(max_iter):
 
-            np.savetxt("G_GFBrime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
-            np.savetxt("A_GFBprime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
-            np.savetxt("F_GFBprime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
+            np.savetxt("GPrime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
+            np.savetxt("APrime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
+            np.savetxt("FPrime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
             
             self.orthonormalize()
             self.F_step()
