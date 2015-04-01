@@ -69,26 +69,25 @@ class stuff(object):
         """init G"""
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.Q-1,:]])
-        print self.nll()
-        #self.orthonormalize()
 
      def F_step(self):
 
         for i in range(self.N):
           Ki = shift.matrix(self.data[i,:])  #K_i for star i  
-          Mi = np.dot(self.A[i,:],np.dot(self.G,Ki))
+          Mi = np.dot(self.A[i,:],np.dot(self.G,Ki)).reshape(self.D,1)
           #print Mi.shape
-          #cov = np.linalg.inv(np.dot(Mi.T, Mi))                 !!!!!!!!!!!!!!!!!!!!!
-          cov = (np.dot(Mi.T,Mi))**-1.
+          cov = np.linalg.inv(np.dot(Mi.T, Mi))                 #!!!!!!!!!!!!!!!!!!!!!
+          #cov = (np.dot(Mi,Mi.T))**-1.
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
-       
+          #print self.F[i]
      def A_step(self):
         
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
-          Mi = self.F[i]*np.dot(self.G,Ki).T                    ########SHOULD THERE BE A TRANSPOSE HERE? ASK HOGG AND/OR DFM AND/OR ROSS 
+          Mi = self.F[i]*np.dot(self.G,Ki).T
+                              ########SHOULD THERE BE A TRANSPOSE HERE? ASK HOGG AND/OR DFM AND/OR ROSS 
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
-          #print "Ai" , self.A[i,:].shape , "cov" , cov.shape, "Mi" , Mi.shape, "di" , self.data[i,:].shape
+
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
      def G_step(self):
@@ -98,7 +97,7 @@ class stuff(object):
         A_temp[i,None] = self.F[i]*self.A[i,None]
         Ki = shift.imatrix(self.data[i,:]) 
         y_temp[i] = np.dot(self.data[i,:] , Ki)
-       
+        #y_temp[i] = shifter.shifter(self.data[i])
        for j in range(self.D):
          
          cov = np.linalg.inv(np.dot(A_temp.T, A_temp))
@@ -135,19 +134,21 @@ class stuff(object):
 
      def update(self, max_iter, check_iter, min_iter, tol):
   
-        #print 'Starting NLL =', self.nll()
+        print 'Starting NLL =', self.nll()
         nll = self.nll()
         for i in range(max_iter):
 
-            np.savetxt("GPrime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
-            np.savetxt("APrime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
-            np.savetxt("FPrime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
+            np.savetxt("GePrime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
+            np.savetxt("AePrime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
+            np.savetxt("FePrime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
             
-            self.orthonormalize()
+            #self.orthonormalize()
             self.F_step()
+            print "NLL after F-step", self.nll()
             self.A_step()
+            print "NLL after A-step", self.nll()
             self.G_step()
-            
+            print "NLL after G-step", self.nll()
 
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
