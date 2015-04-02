@@ -85,7 +85,6 @@ class stuff(object):
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
           Mi = self.F[i]*np.dot(self.G,Ki).T
-                              ########SHOULD THERE BE A TRANSPOSE HERE? ASK HOGG AND/OR DFM AND/OR ROSS 
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
 
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
