@@ -6,6 +6,7 @@ import numpy as np
 import scipy.optimize as op
 from   scipy.linalg import solve
 import scipy.linalg as la
+import itertools
 
 class stuff(object):
    
@@ -69,41 +70,46 @@ class stuff(object):
         """init G"""
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.Q-1,:]])
-
+     
      def F_step(self):
 
         for i in range(self.N):
-          Ki = shift.matrix(self.data[i,:])  #K_i for star i  
+          Ki = shift.matrix(self.data[i,:])  
           Mi = np.dot(self.A[i,:],np.dot(self.G,Ki)).reshape(self.D,1)
-          #print Mi.shape
-          cov = np.linalg.inv(np.dot(Mi.T, Mi))                 #!!!!!!!!!!!!!!!!!!!!!
-          #cov = (np.dot(Mi,Mi.T))**-1.
+          cov = np.linalg.inv(np.dot(Mi.T, Mi))                
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
-          #print self.F[i]
+
+     def HOGG_A_step(self):
+      
+        Mf = np.zeros((self.N*self.D , self.N*self.Q))
+        for i in range(self.N):
+          Ki = shift.matrix(self.data[i,:])
+          Mf[i*self.D:(i+1)*self.D , i*self.Q:(i+1)*self.Q] = self.F[i]*np.dot(self.G , Ki).T
+          
+        cov = np.linalg.inv(np.dot(Mf.T, Mf))
+        self.A = np.dot(cov, np.dot(Mf.T, self.data.flatten())).reshape(self.N , self.Q)
+   
+
      def A_step(self):
         
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
           Mi = self.F[i]*np.dot(self.G,Ki).T
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
-
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
-     def G_step(self):
-       y_temp = np.zeros_like(self.data)
-       A_temp = np.zeros_like(self.A)
-       for i in range(self.N):
-        A_temp[i,None] = self.F[i]*self.A[i,None]
-        Ki = shift.imatrix(self.data[i,:]) 
-        y_temp[i] = np.dot(self.data[i,:] , Ki)
-        #y_temp[i] = shifter.shifter(self.data[i])
-       for j in range(self.D):
-         
-         cov = np.linalg.inv(np.dot(A_temp.T, A_temp))
-         #print cov.shape, A_temp.shape, y_temp[:,j].shape
-         self.G[:,j]= np.dot(cov, np.dot(A_temp.T, y_temp[:,j]))
-       #self.G = G_temp/self.N
+     """HOGG_A_step and A_step are equivalent, but A-step is faster"""
 
+
+     def G_step(self): 
+
+        Mf = np.zeros((self.D , self.N , self.Q , self.D))
+        for i in range(self.N):
+          Ki = shift.matrix(self.data[i,:])
+          Mf[i] = self.F[i,None,None,None]*self.A[i,None,:,None]*Ki.T[None,:,None,:]
+        Tf = Mf.reshape(self.N*self.D, self.Q*self.D)
+        cov = np.linalg.inv(np.dot(Tf.T, Tf))
+        self.G = np.dot(cov, np.dot(Tf.T, self.data.flatten())).reshape(self.Q , self.D)
 
      def nll(self):
    
@@ -114,7 +120,10 @@ class stuff(object):
          #print np.dot(self.A[i,:],self.G).shape
          #print Ki.shape
          model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.G) , Ki)
-         nll += 0.5*np.sum((model_i - self.data[i,:])**2.)
+         b  = int((self.D)**.5)
+         model_square = model_i.reshape(b,b)
+         data_square = self.data[i,:].reshape(b,b)
+         nll += 0.5*np.sum((model_square - data_square)**2.)
        return nll
      
      def orthonormalize(self):
@@ -148,7 +157,7 @@ class stuff(object):
             print "NLL after A-step", self.nll()
             self.G_step()
             print "NLL after G-step", self.nll()
-
+        
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
                 print 'NLL at step %d is:' % i, new_nll
