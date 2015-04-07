@@ -30,15 +30,16 @@ class stuff(object):
         """
                
         self.A = np.zeros((self.N,self.Q))    #Creating the amplitude matrix
-        self.G = np.zeros((self.Q,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
+        self.Z = np.zeros((self.Q,self.D))    #Creating the basis matrix. This matrix contains K eigen-vectors. Each eigen-vector is
                                               # a D-dimensional object!
-        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values of N observations.
+        self.F = np.zeros((self.N))           #Creating an N-dimensional Flux vector. conatins flux values 
+                                              #of N observations.
 
 
-        """ initialization of FAG by means of normalizing, shifting, and singular-value decomposition"""
+        """ initialization of FAZ by means of normalizing, shifting, and singular-value decomposition"""
         self.initialize()
 
-        """ updating FAG matrix by F-step, A-step, and G-step least-square optimization"""
+        """ updating FAZ matrix by F-step, A-step, and Z-step least-square optimization"""
         self.update(max_iter, check_iter, min_iter, tol)
         
         
@@ -52,7 +53,9 @@ class stuff(object):
         for i in range(self.N):
           
           self.F[i] = np.sum(self.data[i,:])   #flux = sum of pixel intensities
-          self.dm[i,:] = np.dot(self.data[i,:], shift.imatrix(self.data[i,:]))/self.F[i]   #shift each star to its center and normalize it
+          self.dm[i,:] = np.dot(self.data[i,:], shift.imatrix(self.data[i,:]))/self.F[i]   #shift each star 
+                                                                                           #to its center and
+                                                                                           #normalize it
         
         #initializing the mean. The mean will later be inserted into eigen-vectors.
         mean = np.mean(self.dm, axis=0)
@@ -67,15 +70,15 @@ class stuff(object):
         coefficients = u[:, :self.Q-1] * s[None, :self.Q-1]
         ones = np.ones((self.N,1))
         self.A = np.hstack([ones , coefficients])
-        """init G"""
+        """init Z"""
         #eigen basis functions including the mean
-        self.G = np.vstack([mean , vh[:self.Q-1,:]])
+        self.Z = np.vstack([mean , vh[:self.Q-1,:]])
 
      def F_step(self):
 
         for i in range(self.N):
           Ki = shift.matrix(self.data[i,:])
-          Mi = np.dot(self.A[i,:],np.dot(self.G,Ki)).reshape(self.D,1)
+          Mi = np.dot(self.A[i,:],np.dot(self.Z,Ki)).reshape(self.D,1)
           cov = np.linalg.inv(np.dot(Mi.T, Mi))                
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
@@ -84,7 +87,7 @@ class stuff(object):
         Mf = np.zeros((self.N*self.D , self.N*self.Q))
         for i in range(self.N):
           Ki = shift.matrix(self.data[i,:])
-          Mf[i*self.D:(i+1)*self.D , i*self.Q:(i+1)*self.Q] = self.F[i]*np.dot(self.G , Ki).T
+          Mf[i*self.D:(i+1)*self.D , i*self.Q:(i+1)*self.Q] = self.F[i]*np.dot(self.Z , Ki).T
           
         cov = np.linalg.inv(np.dot(Mf.T, Mf))
         self.A = np.dot(cov, np.dot(Mf.T, self.data.flatten())).reshape(self.N , self.Q)
@@ -94,14 +97,14 @@ class stuff(object):
         
         for i in range(self.N):  
           Ki = shift.matrix(self.data[i,:])   
-          Mi = self.F[i]*np.dot(self.G,Ki).T
+          Mi = self.F[i]*np.dot(self.Z,Ki).T
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
      """A_step_prime and A_step are equivalent"""
 
 
-     def G_step(self): 
+     def Z_step(self): 
 
         Mf = np.zeros((self.N , self.D , self.Q , self.D))
         for i in range(self.N):
@@ -109,19 +112,19 @@ class stuff(object):
           Mf[i] = self.F[i,None,None,None]*self.A[i,None,:,None]*Ki.T[None,:,None,:]
         Tf = Mf.reshape(self.N*self.D, self.Q*self.D)
         cov = np.linalg.inv(np.dot(Tf.T, Tf))
-        self.G = np.dot(cov, np.dot(Tf.T, self.data.flatten())).reshape(self.Q , self.D)
+        self.Z = np.dot(cov, np.dot(Tf.T, self.data.flatten())).reshape(self.Q , self.D)
 
 
-     def SGD_G_step(self):
+     def SGD_Z_step(self):
         for t in range(1,self.N):
           p = randint(0,self.N-1)
           Kp = shift.matrix(self.data[p,:])
-          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.G),Kp)
+          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
           gradp = -2.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
           gradp = modelp[:,None,None]*gradp
           Gradp = np.sum(gradp , axis = 0)        
           beta = self.alpha/t
-          self.G = self.G - beta*Gradp        
+          self.Z = self.Z - beta*Gradp        
 
 
      def nll(self):
@@ -130,7 +133,7 @@ class stuff(object):
 
        for i in range(self.N):
          Ki = shift.matrix(self.data[i,:])
-         model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.G) , Ki)
+         model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.Z) , Ki)
          b  = int((self.D)**.5)
          model_square = model_i.reshape(b,b)
          data_square = self.data[i,:].reshape(b,b)
@@ -142,13 +145,13 @@ class stuff(object):
         def get_normalization(v):
             return np.sqrt(np.dot(v, v))
 
-        self.G[0] /= get_normalization(self.G[0])
+        self.Z[0] /= get_normalization(self.Z[0])
         for i in range(1, self.Q):
             for j in range(0, i):
-                v = np.dot(self.G[i], self.G[j])
-                self.G[i] -=  v * self.G[j]
+                v = np.dot(self.Z[i], self.Z[j])
+                self.Z[i] -=  v * self.Z[j]
                     
-            self.G[i] /= get_normalization(self.G[i])
+            self.Z[i] /= get_normalization(self.Z[i])
      
 
      def update(self, max_iter, check_iter, min_iter, tol):
@@ -157,7 +160,7 @@ class stuff(object):
         nll = self.nll()
         for i in range(max_iter):
 
-            np.savetxt("GePrime_10%d.txt"%(i) , np.array(self.G.flatten()) ,fmt='%.12f')
+            np.savetxt("ZePrime_10%d.txt"%(i) , np.array(self.Z.flatten()) ,fmt='%.12f')
             np.savetxt("AePrime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
             np.savetxt("FePrime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
             
@@ -165,8 +168,8 @@ class stuff(object):
             print "NLL after F-step", self.nll()
             self.A_step()
             print "NLL after A-step", self.nll()
-            self.SGD_G_step()
-            print "NLL after G-step", self.nll()
+            self.SGD_Z_step()
+            print "NLL after Z-step", self.nll()
         
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
