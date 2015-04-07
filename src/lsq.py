@@ -103,7 +103,7 @@ class stuff(object):
 
      def G_step(self): 
 
-        Mf = np.zeros((self.D , self.N , self.Q , self.D))
+        Mf = np.zeros((self.N , self.D , self.Q , self.D))
         for i in range(self.N):
           Ki = shift.matrix(self.data[i,:])
           Mf[i] = self.F[i,None,None,None]*self.A[i,None,:,None]*Ki.T[None,:,None,:]
