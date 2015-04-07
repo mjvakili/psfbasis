@@ -3,14 +3,13 @@ import ms
 import shifter
 import shift
 import numpy as np
-import scipy.optimize as op
 from   scipy.linalg import solve
 import scipy.linalg as la
-import itertools
+from random import randint
 
 class stuff(object):
    
-     def __init__(self, data, Q, min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
+     def __init__(self, data, Q, alpha = 10**-8. , min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
 
         """ inputs of the code: NxD data matrix;
                                 NxD uncertainty matrix;
@@ -19,10 +18,11 @@ class stuff(object):
 
         self.N = data.shape[0]           #number of observations
         self.D = data.shape[1]           #input dimensionality, dimension of each observed data point
-        self.Q = Q                       #latent dimensionality (note that this also includes the mean, meaning that in initialization
-                                         #                       Q-1 pca components are kept!
+        self.Q = Q                       #latent dimensionality (note that this also includes the mean,
+                                         #meaning that in initialization Q-1 pca components are kept!
+        self.alpha = alpha               
         self.data = np.atleast_2d(data)  #making sure the data has the right dimension
-        #self.ivar = ivar                 #variance with the same dimensiona as the data
+        #self.ivar = ivar                #variance with the same dimensiona as the data
         
         """ outputs of the code: NxQ amplitude (coefficients) matrix;
                                  QxD basis (eigen vectors) matrix
@@ -70,16 +70,16 @@ class stuff(object):
         """init G"""
         #eigen basis functions including the mean
         self.G = np.vstack([mean , vh[:self.Q-1,:]])
-     
+
      def F_step(self):
 
         for i in range(self.N):
-          Ki = shift.matrix(self.data[i,:])  
+          Ki = shift.matrix(self.data[i,:])
           Mi = np.dot(self.A[i,:],np.dot(self.G,Ki)).reshape(self.D,1)
           cov = np.linalg.inv(np.dot(Mi.T, Mi))                
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
-     def HOGG_A_step(self):
+     def A_step_prime(self):
       
         Mf = np.zeros((self.N*self.D , self.N*self.Q))
         for i in range(self.N):
@@ -98,7 +98,7 @@ class stuff(object):
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
 
-     """HOGG_A_step and A_step are equivalent, but A-step is faster"""
+     """A_step_prime and A_step are equivalent"""
 
 
      def G_step(self): 
@@ -111,14 +111,25 @@ class stuff(object):
         cov = np.linalg.inv(np.dot(Tf.T, Tf))
         self.G = np.dot(cov, np.dot(Tf.T, self.data.flatten())).reshape(self.Q , self.D)
 
+
+     def SGD_G_step(self):
+        for t in range(1,self.N):
+          p = randint(0,self.N-1)
+          Kp = shift.matrix(self.data[p,:])
+          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.G),Kp)
+          gradp = -2.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
+          gradp = modelp[:,None,None]*gradp
+          Gradp = np.sum(gradp , axis = 0)        
+          beta = self.alpha/t
+          self.G = self.G - beta*Gradp        
+
+
      def nll(self):
    
        nll = 0.
 
        for i in range(self.N):
          Ki = shift.matrix(self.data[i,:])
-         #print np.dot(self.A[i,:],self.G).shape
-         #print Ki.shape
          model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.G) , Ki)
          b  = int((self.D)**.5)
          model_square = model_i.reshape(b,b)
@@ -150,12 +161,11 @@ class stuff(object):
             np.savetxt("AePrime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
             np.savetxt("FePrime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
             
-            #self.orthonormalize()
             self.F_step()
             print "NLL after F-step", self.nll()
             self.A_step()
             print "NLL after A-step", self.nll()
-            self.G_step()
+            self.SGD_G_step()
             print "NLL after G-step", self.nll()
         
             if np.mod(i, check_iter) == 0:
