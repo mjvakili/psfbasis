@@ -111,7 +111,7 @@ class stuff(object):
           Ki = shift.matrix(self.data[i,:])
           Mf[i] = self.F[i,None,None,None]*self.A[i,None,:,None]*Ki.T[None,:,None,:]
         Tf = Mf.reshape(self.N*self.D, self.Q*self.D)
-        cov = np.linalg.inv(np.dot(Tf.T, Tf))
+        cov = np.linalg.inv(np.dot(Tf.T, Tf)+.00001*np.eye(self.Q*self.D , self.Q*self.D))
         self.Z = np.dot(cov, np.dot(Tf.T, self.data.flatten())).reshape(self.Q , self.D)
 
 
