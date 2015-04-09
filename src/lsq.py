@@ -194,7 +194,7 @@ class stuff(object):
             oldobj = self.nll()
             self.svd_A_rotate_A_and_Z()
             obj = self.nll()
-            assert obj == oldobj
+            assert (obj - oldobj)<10**-10.
             
             print "NLL after A-step , and rotating A and Z", self.nll()
         
