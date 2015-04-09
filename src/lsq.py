@@ -124,8 +124,14 @@ class stuff(object):
           gradp = modelp[:,None,None]*gradp
           Gradp = np.sum(gradp , axis = 0)        
           beta = self.alpha/t
-          self.Z = self.Z - beta*Gradp        
+          self.Z = self.Z - beta*Gradp 
+          
+     def svd_A_rotate_A_and_Z(self):
 
+        u_ , s_ , vh_ = la.svd(self.A)
+        ss_ = np.vstack([np.diag(s_) , np.zeros((self.N - self.Q , self.Q))])
+        self.A = np.dot(u_  , ss_)
+        self.Z = np.dot(vh_.T , self.Z)
 
      def nll(self):
    
@@ -164,16 +170,38 @@ class stuff(object):
             np.savetxt("AePrime_10%d.txt"%(i) , np.array(self.A.flatten()) ,fmt='%.12f')
             np.savetxt("FePrime_10%d.txt"%(i) , np.array(self.F.flatten()) ,fmt='%.12f')
             
+            oldobj = self.nll()
             self.F_step()
-            print "NLL after F-step", self.nll()
+            
+            obj = self.nll()
+            assert (obj < oldobj)or(obj == oldobj)
+            print "NLL after F-step", obj
+            oldobj = self.nll()
+            
+            self.Z_step()
+            
+            obj = self.nll()
+            assert (obj < oldobj)or(obj == oldobj)
+            print "NLL after Z-step", obj
+            oldobj = self.nll()
+            
+            self.orthonormalize()
+            
             self.A_step()
-            print "NLL after A-step", self.nll()
-            self.SGD_Z_step()
-            print "NLL after Z-step", self.nll()
+            obj = self.nll()
+            assert (obj < oldobj)or(obj == oldobj)
+            
+            oldobj = self.nll()
+            self.svd_A_rotate_A_and_Z()
+            obj = self.nll()
+            assert obj == oldobj
+            
+            print "NLL after A-step , and rotating A and Z", self.nll()
+        
         
             if np.mod(i, check_iter) == 0:
                 new_nll =  new_nll = self.nll()
-                print 'NLL at step %d is:' % i, new_nll
+                print 'NLL at step %d is:' % i+1, new_nll
             if (((nll - new_nll) / nll) < tol) & (min_iter < i):
                 print 'Stopping at step %d with NLL:' % i, new_nll
                 self.nll = new_nll
