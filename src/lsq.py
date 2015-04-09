@@ -128,10 +128,10 @@ class stuff(object):
           
      def svd_A_rotate_A_and_Z(self):
 
-        u_ , s_ , vh_ = la.svd(self.A)
-        ss_ = np.vstack([np.diag(s_) , np.zeros((self.N - self.Q , self.Q))])
-        self.A = np.dot(u_  , ss_)
-        self.Z = np.dot(vh_.T , self.Z)
+        u_ , s_ , vh_ = la.svd(self.A[:,1:])
+        ss_ = np.vstack([np.diag(s_) , np.zeros((self.N - self.Q + 1 , self.Q-1))])
+        self.A[:,1:] = np.dot(u_  , ss_)
+        self.Z[1:,:] = np.dot(vh_.T , self.G[1:,:])
 
      def nll(self):
    
