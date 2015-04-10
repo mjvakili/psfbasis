@@ -131,7 +131,7 @@ class stuff(object):
         u_ , s_ , vh_ = la.svd(self.A[:,1:])
         ss_ = np.vstack([np.diag(s_) , np.zeros((self.N - self.Q + 1 , self.Q-1))])
         self.A[:,1:] = np.dot(u_  , ss_)
-        self.Z[1:,:] = np.dot(vh_.T , self.G[1:,:])
+        self.Z[1:,:] = np.dot(vh_ , self.Z[1:,:])
 
      def nll(self):
    
