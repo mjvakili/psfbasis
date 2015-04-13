@@ -124,7 +124,33 @@ class stuff(object):
           gradp = modelp[:,None,None]*gradp
           Gradp = np.sum(gradp , axis = 0)        
           beta = self.alpha/t
-          self.Z = self.Z - beta*Gradp 
+          self.Z = self.Z - beta*Gradp
+          
+     def grad_Z(self , params , *args):
+        
+        self.A, self.F = args
+        self.Z = params.reshape(self.Q,self.D)
+        grad = np.zeros_like(self.Z)
+        for p in range(self.N):
+         p = randint(0,self.N-1)
+         Kp = shift.matrix(self.data[p,:])
+         modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
+         gradp = -2.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
+         gradp = modelp[:,None,None]*gradp
+         Gradp = np.sum(gradp , axis = 0) 
+         grad += Gradp
+        return grad.flatten()
+
+     def func(self , params, *args):
+        self.A, self.F = args
+        self.Z = params.reshape(self.Q, self.D)   
+        return self.nll()
+
+     def lbfgs_Z(self):
+        x = op.fmin_l_bfgs_b(self.func, x0=self.Z.flatten(), fprime = self.grad_Z, args=(self.A,self.F),\
+                             approx_grad = False, bounds = None, m=10, factr=1000000., pgtol=1e-05, \
+                             epsilon=1e-08, maxfun=150)
+        self.Z  = x[0].reshape(self.Q,self.D)    
           
      def svd_A_rotate_A_and_Z(self):
 
@@ -178,8 +204,8 @@ class stuff(object):
             print "NLL after F-step", obj
             oldobj = self.nll()
             
-            self.Z_step()
-            
+            #self.Z_step()
+            self.lbfgs_Z()
             obj = self.nll()
             assert (obj < oldobj)or(obj == oldobj)
             print "NLL after Z-step", obj
