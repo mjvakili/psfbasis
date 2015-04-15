@@ -132,7 +132,6 @@ class stuff(object):
         self.Z = params.reshape(self.Q,self.D)
         grad = np.zeros_like(self.Z)
         for p in range(self.N):
-         p = randint(0,self.N-1)
          Kp = shift.matrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
          gradp = -2.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
@@ -140,18 +139,42 @@ class stuff(object):
          Gradp = np.sum(gradp , axis = 0) 
          grad += Gradp
         return grad.flatten()
+     
+     def grad_A(self, params, *args):
 
-     def func(self , params, *args):
+        self.Z, self.F = args
+        self.A = params.reshape(self.N, self.Q)
+        grad = np.zeros_like(self.A)
+        for p in range(self.N):
+         Kp = shift.matrix(self.data[p,:])
+         modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
+         gradp = -2.*self.F[p][None,None]*np.dot(self.Z,Kp)[:,:]
+         grad[p,:]   = (gradp*modelp[None,:]).sum(axis=1)
+        return grad.flatten() 
+        
+     def func_A(self, params , *args):
+        
+        self.Z , self.F = args
+        self.A  = params.reshape(self.N, self.Q)
+        return self.nll()
+          
+     def func_Z(self , params, *args):
         self.A, self.F = args
         self.Z = params.reshape(self.Q, self.D)   
         return self.nll()
 
-     def lbfgs_Z(self):
-        x = op.fmin_l_bfgs_b(self.func, x0=self.Z.flatten(), fprime = self.grad_Z, args=(self.A,self.F),\
-                             approx_grad = False, bounds = None, m=10, factr=1000000., pgtol=1e-05, \
-                             epsilon=1e-08, maxfun=150)
-        self.Z  = x[0].reshape(self.Q,self.D)    
-          
+     def bfgs_Z(self):
+        x = op.fmin_l_bfgs_b(self.func_Z,x0=self.Z.flatten(), fprime = self.grad_Z,args=(self.A,self.F), approx_grad = False, \
+                              bounds = None, m=10, factr=100., pgtol=1e-05, epsilon=1e-04, maxfun=50)
+        #print x
+        self.Z  = x[0].reshape(self.Q,self.D)
+        
+     def bfgs_A(self):
+        x = op.fmin_l_bfgs_b(self.func_A,x0=self.A.flatten(), fprime = self.grad_A,args=(self.Z,self.F), approx_grad = False, \
+                              bounds = None, m=10, factr=100., pgtol=1e-05, epsilon=1e-04, maxfun=50)
+        #print x
+        self.A  = x[0].reshape(self.N,self.Q)
+        
      def svd_A_rotate_A_and_Z(self):
 
         u_ , s_ , vh_ = la.svd(self.A[:,1:])
@@ -213,7 +236,7 @@ class stuff(object):
             
             self.orthonormalize()
             
-            self.A_step()
+            self.lbfgs_A()
             obj = self.nll()
             assert (obj < oldobj)or(obj == oldobj)
             
