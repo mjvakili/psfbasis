@@ -151,6 +151,18 @@ class stuff(object):
          gradp = -2.*self.F[p][None,None]*np.dot(self.Z,Kp)[:,:]
          grad[p,:]   = (gradp*modelp[None,:]).sum(axis=1)
         return grad.flatten() 
+     
+     def grad_F(self, params, *args):
+
+        self.A, self.G = args
+        self.F = params
+        grad = np.zeros_like(self.F)
+        for p in range(self.N):
+         Kp = shift.matrix(self.data[p,:])
+         modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.G),Kp)
+         gradp = np.dot(np.dot(self.A[p,:],self.G),Kp)
+         grad[p] = np.sum(modelp*gradp)
+        return grad
         
      def func_A(self, params , *args):
         
@@ -162,6 +174,11 @@ class stuff(object):
         self.A, self.F = args
         self.Z = params.reshape(self.Q, self.D)   
         return self.nll()
+     
+     def func_F(self , params, *args):
+        self.A, self.Z = args
+        self.F = params
+        return self.nll()  
 
      def bfgs_Z(self):
         x = op.fmin_l_bfgs_b(self.func_Z,x0=self.Z.flatten(), fprime = self.grad_Z,args=(self.A,self.F), approx_grad = False, \
@@ -175,6 +192,11 @@ class stuff(object):
         #print x
         self.A  = x[0].reshape(self.N,self.Q)
         
+     def bfgs_F(self):
+        x = op.fmin_l_bfgs_b(self.func_F,x0=self.F, fprime = self.grad_F,args=(self.A,self.Z), approx_grad = False, \
+                              bounds = None, m=10, factr=100., pgtol=1e-05, epsilon=1e-04, maxfun=50)
+        #print x
+        self.F  = x[0]   
      def svd_A_rotate_A_and_Z(self):
 
         u_ , s_ , vh_ = la.svd(self.A[:,1:])
