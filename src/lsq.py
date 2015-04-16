@@ -134,7 +134,7 @@ class stuff(object):
         for p in range(self.N):
          Kp = shift.matrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
-         gradp = -2.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
+         gradp = -1.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
          gradp = modelp[:,None,None]*gradp
          Gradp = np.sum(gradp , axis = 0) 
          grad += Gradp
@@ -148,7 +148,7 @@ class stuff(object):
         for p in range(self.N):
          Kp = shift.matrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
-         gradp = -2.*self.F[p][None,None]*np.dot(self.Z,Kp)[:,:]
+         gradp = -1.*self.F[p][None,None]*np.dot(self.Z,Kp)[:,:]
          grad[p,:]   = (gradp*modelp[None,:]).sum(axis=1)
         return grad.flatten() 
      
@@ -160,7 +160,7 @@ class stuff(object):
         for p in range(self.N):
          Kp = shift.matrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.G),Kp)
-         gradp = np.dot(np.dot(self.A[p,:],self.G),Kp)
+         gradp = -1.*np.dot(np.dot(self.A[p,:],self.G),Kp)
          grad[p] = np.sum(modelp*gradp)
         return grad
         
