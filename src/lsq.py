@@ -53,7 +53,7 @@ class stuff(object):
         for i in range(self.N):
           
           self.F[i] = np.sum(self.data[i,:])   #flux = sum of pixel intensities
-          self.dm[i,:] = np.dot(self.data[i,:], shift.imatrix(self.data[i,:]))/self.F[i]   #shift each star 
+          self.dm[i,:] = np.dot(self.data[i,:], shift.matrix(self.data[i,:]))/self.F[i]   #shift each star 
                                                                                            #to its center and
                                                                                            #normalize it
         
@@ -77,7 +77,7 @@ class stuff(object):
      def F_step(self):
 
         for i in range(self.N):
-          Ki = shift.matrix(self.data[i,:])
+          Ki = shift.imatrix(self.data[i,:])
           Mi = np.dot(self.A[i,:],np.dot(self.Z,Ki)).reshape(self.D,1)
           cov = np.linalg.inv(np.dot(Mi.T, Mi))                
           self.F[i] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
@@ -86,7 +86,7 @@ class stuff(object):
       
         Mf = np.zeros((self.N*self.D , self.N*self.Q))
         for i in range(self.N):
-          Ki = shift.matrix(self.data[i,:])
+          Ki = shift.imatrix(self.data[i,:])
           Mf[i*self.D:(i+1)*self.D , i*self.Q:(i+1)*self.Q] = self.F[i]*np.dot(self.Z , Ki).T
           
         cov = np.linalg.inv(np.dot(Mf.T, Mf))
@@ -96,7 +96,7 @@ class stuff(object):
      def A_step(self):
         
         for i in range(self.N):  
-          Ki = shift.matrix(self.data[i,:])   
+          Ki = shift.imatrix(self.data[i,:])   
           Mi = self.F[i]*np.dot(self.Z,Ki).T
           cov = np.linalg.inv(np.dot(Mi.T, Mi))
           self.A[i,:] = np.dot(cov, np.dot(Mi.T, self.data[i,:]))
@@ -108,7 +108,7 @@ class stuff(object):
 
         Mf = np.zeros((self.N , self.D , self.Q , self.D))
         for i in range(self.N):
-          Ki = shift.matrix(self.data[i,:])
+          Ki = shift.imatrix(self.data[i,:])
           Mf[i] = self.F[i,None,None,None]*self.A[i,None,:,None]*Ki.T[None,:,None,:]
         Tf = Mf.reshape(self.N*self.D, self.Q*self.D)
         cov = np.linalg.inv(np.dot(Tf.T, Tf)+.00001*np.eye(self.Q*self.D , self.Q*self.D))
@@ -118,7 +118,7 @@ class stuff(object):
      def SGD_Z_step(self):
         for t in range(1,self.N):
           p = randint(0,self.N-1)
-          Kp = shift.matrix(self.data[p,:])
+          Kp = shift.imatrix(self.data[p,:])
           modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
           gradp = -2.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
           gradp = modelp[:,None,None]*gradp
@@ -132,7 +132,7 @@ class stuff(object):
         self.Z = params.reshape(self.Q,self.D)
         grad = np.zeros_like(self.Z)
         for p in range(self.N):
-         Kp = shift.matrix(self.data[p,:])
+         Kp = shift.imatrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
          gradp = -1.*self.F[p,None,None,None]*self.A[p,None,:,None]*Kp.T[:,None,:]
          gradp = modelp[:,None,None]*gradp
@@ -146,7 +146,7 @@ class stuff(object):
         self.A = params.reshape(self.N, self.Q)
         grad = np.zeros_like(self.A)
         for p in range(self.N):
-         Kp = shift.matrix(self.data[p,:])
+         Kp = shift.imatrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
          gradp = -1.*self.F[p][None,None]*np.dot(self.Z,Kp)[:,:]
          grad[p,:]   = (gradp*modelp[None,:]).sum(axis=1)
@@ -158,7 +158,7 @@ class stuff(object):
         self.F = params
         grad = np.zeros_like(self.F)
         for p in range(self.N):
-         Kp = shift.matrix(self.data[p,:])
+         Kp = shift.imatrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.G),Kp)
          gradp = -1.*np.dot(np.dot(self.A[p,:],self.G),Kp)
          grad[p] = np.sum(modelp*gradp)
@@ -209,7 +209,7 @@ class stuff(object):
        nll = 0.
 
        for i in range(self.N):
-         Ki = shift.matrix(self.data[i,:])
+         Ki = shift.imatrix(self.data[i,:])
          model_i = self.F[i]*np.dot(np.dot(self.A[i,:], self.Z) , Ki)
          b  = int((self.D)**.5)
          model_square = model_i.reshape(b,b)
