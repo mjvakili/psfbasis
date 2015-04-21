@@ -9,7 +9,7 @@ from random import randint
 
 class stuff(object):
    
-     def __init__(self, data, Q, alpha = 10**-8. , min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
+     def __init__(self, data, Q, eps = .25 , min_iter=5, max_iter=30, check_iter=5 , tol=1.e-6):
 
         """ inputs of the code: NxD data matrix;
                                 NxD uncertainty matrix;
@@ -20,7 +20,7 @@ class stuff(object):
         self.D = data.shape[1]           #input dimensionality, dimension of each observed data point
         self.Q = Q                       #latent dimensionality (note that this also includes the mean,
                                          #meaning that in initialization Q-1 pca components are kept!
-        self.alpha = alpha               
+        self.eps = eps                   #Hyper-parameter: coeffcient of L1 reg. term on Basis Functions             
         self.data = np.atleast_2d(data)  #making sure the data has the right dimension
         #self.ivar = ivar                #variance with the same dimensiona as the data
         
@@ -131,6 +131,8 @@ class stuff(object):
         self.A, self.F = args
         self.Z = params.reshape(self.Q,self.D)
         grad = np.zeros_like(self.Z)
+        grad[self.Z>0] =  self.eps
+        grad[self.Z<0] = -self.eps
         for p in range(self.N):
          Kp = shift.imatrix(self.data[p,:])
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
@@ -215,7 +217,7 @@ class stuff(object):
          model_square = model_i.reshape(b,b)
          data_square = self.data[i,:].reshape(b,b)
          nll += 0.5*np.sum((model_square - data_square)**2.)
-       return nll
+       return nll + self.esp*np.abs(self.Z).sum()
      
      def orthonormalize(self):
        
