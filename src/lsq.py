@@ -153,6 +153,7 @@ class stuff(object):
          modelp = self.data[p,:] - self.F[p]*np.dot(np.dot(self.A[p,:],self.Z),Kp)
          gradp = -1.*self.F[p][None,None]*np.dot(self.Z,Kp)[:,:]
          grad[p,:]   = (gradp*modelp[None,:]).sum(axis=1)
+         grad[p,:] *= 0.
         return grad.flatten() 
      
      def grad_F(self, params, *args):
@@ -259,16 +260,11 @@ class stuff(object):
             print "NLL after Z-step", obj
             oldobj = self.nll()
             
-            self.orthonormalize()
+            #self.orthonormalize()
             
             self.lbfgs_A()
             obj = self.nll()
             assert (obj < oldobj)or(obj == oldobj)
-            
-            oldobj = self.nll()
-            self.svd_A_rotate_A_and_Z()
-            obj = self.nll()
-            assert (obj - oldobj)<10**-10.
             
             print "NLL after A-step , and rotating A and Z", self.nll()
         
